@@ -1,16 +1,16 @@
 const express = require('express');
 const { Pool } = require('pg');
-const cors = require('cors');
+//const cors = require('cors');
 
 const app = express();
 
 // Middleware para parsear JSON y CORS
 app.use(express.json());
-app.use(cors({
-  origin: '*',  // Permite cualquier origen (incluyendo file:// y localhost:puertos)
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Métodos permitidos
-  allowedHeaders: ['Content-Type', 'Authorization']  // Headers permitidos
-}));
+//app.use(cors({
+  //origin: '*',  // Permite cualquier origen (incluyendo file:// y localhost:puertos)
+  //methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Métodos permitidos
+ // allowedHeaders: ['Content-Type', 'Authorization']  // Headers permitidos
+//}));
 const port = process.env.PORT || 5000;
 
 

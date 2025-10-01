@@ -1,0 +1,24 @@
+{
+  "name": "my-fullstack-app",
+  "version": "1.0.0",
+  "description": "Backend for my fullstack application using Express and PostgreSQL",
+  "main": "src/api-rest.js",
+  "scripts": {
+    "start": "node src/api-rest.js",
+    "proxy": "node proxy.js",
+    "server": "node server.js",
+    "dev": "nodemon src/api-rest.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.10"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+}

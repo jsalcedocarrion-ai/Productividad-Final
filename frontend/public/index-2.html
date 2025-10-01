@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Consulta de Tareas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Consulta de Tareas</h1>
+    <form id="consultaForm">
+      <label for="assignee">Assignee:</label>
+      <input type="text" id="assignee" name="assignee" required>
+
+      <label for="taskKey">Task Key:</label>
+      <input type="text" id="taskKey" name="taskKey" required>
+
+      <label for="fechaInicio">Fecha Inicio:</label>
+      <input type="date" id="fechaInicio" name="fechaInicio" required>
+
+      <label for="fechaFin">Fecha Fin:</label>
+      <input type="date" id="fechaFin" name="fechaFin" required>
+
+      <button type="submit">Consultar</button>
+    </form>
+    <div id="resultado"></div>
+  </div>
+  <script>
+    document.getElementById('consultaForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+
+ 
+      const resultadoDiv = document.getElementById('resultado');
+      resultadoDiv.innerHTML = 'Consultando...';
+
+try {
+      const assignee = document.getElementById('assignee').value;
+      const taskKey = document.getElementById('taskKey').value;
+      const fechaInicio = document.getElementById('fechaInicio').value;
+      const fechaFin = document.getElementById('fechaFin').value;
+
+      console.log('Enviando consulta con params:', { assignee, taskKey, fechaInicio, fechaFin });
+
+        const params = new URLSearchParams({ assignee, taskKey, fechaInicio, fechaFin });
+          const response = await fetch(`/tareas?${params}`);
+          console.log('Respuesta recibida:', response.status);
+
+          const data = await response.json();
+          console.log('Datos recibidos:', data);
+
+          if (response.ok) {
+            if (Array.isArray(data) && data.length > 0) {
+              let table = '<table><thead><tr>';
+              table += '<th>Num Trámite</th><th>Fecha Ingreso</th><th>Tipo Trámite</th><th>Nombre Tarea</th><th>Inicio Tarea</th><th>Fin Tarea</th><th>Duración</th>';
+              table += '</tr></thead><tbody>';
+              
+              data.forEach(row => {
+                table += `<tr>
+                  <td>${row.num_tramite || '-'}</td>
+                  <td>${row.fecha_ingreso || '-'}</td>
+                  <td>${row.tipo_tramite || '-'}</td>
+                  <td>${row.nombre_tarea || '-'}</td>
+                  <td>${row.fecha_inicio_tarea || '-'}</td>
+                  <td>${row.fecha_fin_tarea || '-'}</td>
+                  <td>${row.duracion_tarea || '-'}</td>
+                </tr>`;
+              });
+              
+              table += '</tbody></table>';
+              resultadoDiv.innerHTML = table;
+            } else {
+              resultadoDiv.innerHTML = '<p class="error">No se encontraron resultados.</p>';
+            }
+          } else {
+            resultadoDiv.innerHTML = `<p class="error">${data.error || data.mensaje || 'Error en la consulta'}</p>`;
+          }
+        } catch (err) {
+          console.error('Error en la consulta:', err);
+          resultadoDiv.innerHTML = `<p class="error">Error de conexión con el servidor: ${err.message}</p>`;
+        }
+      });
+    </script>
+</body>
+</html>

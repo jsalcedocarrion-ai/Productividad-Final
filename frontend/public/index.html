@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas de Trámites - Frontend</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+     <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container my-5">
+        <h1 class="text-center mb-4">Estadísticas de Trámites y Usuarios</h1>
+        
+        <!-- Step 0: Date Selection -->
+        <div id="step-dates" class="step-container step-active">
+            <div class="date-section">
+                <h3>Seleccionar Rango de Fechas (UTC-5)</h3>
+                <div class="row">
+                    <div class="col-md-5">
+                        <label for="fecha_desde" class="form-label">Fecha Desde:</label>
+                        <input type="date" id="fecha_desde" class="form-control" value="">
+                    </div>
+                    <div class="col-md-5">
+                        <label for="fecha_hasta" class="form-label">Fecha Hasta:</label>
+                        <input type="date" id="fecha_hasta" class="form-control" value="">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button id="load-roles" class="btn btn-primary w-100">Cargar Roles/Usuarios</button>
+                    </div>
+                </div>
+                <small class="text-muted">Formato: DD-MM-YYYY. Se usará el último mes si no se selecciona.</small>
+            </div>
+        </div>
+
+        <!-- Step 1: Roles/Users Table -->
+        <div id="step-roles" class="step-container">
+            <h3>Roles y Estadísticas de Usuarios</h3>
+            <button id="back-dates" class="btn btn-secondary mb-3">← Volver a Fechas</button>
+            <div id="roles-loading" class="loading">
+                <div class="spinner-border" role="status"></div>
+                <p>Cargando roles...</p>
+            </div>
+            <div id="roles-table-container"></div>
+            <div id="roles-error" class="error-msg" style="display: none;"></div>
+        </div>
+
+        <!-- Step 2: Users Details Table -->
+        <div id="step-users" class="step-container">
+            <h3>Detalles de Usuarios por Rol: <span id="selected-role"></span></h3>
+            <button id="back-roles" class="btn btn-secondary mb-3">← Volver a Roles</button>
+            <div id="users-loading" class="loading">
+                <div class="spinner-border" role="status"></div>
+                <p>Cargando usuarios...</p>
+            </div>
+            <div id="users-table-container"></div>
+            <div id="users-error" class="error-msg" style="display: none;"></div>
+        </div>
+
+        <!-- Step 3: Trámites per User Table -->
+        <div id="step-tramites" class="step-container">
+            <h3>Trámites del Usuario: <span id="selected-user"></span></h3>
+            <button id="back-users" class="btn btn-secondary mb-3">← Volver a Usuarios</button>
+            <div id="tramites-loading" class="loading">
+                <div class="spinner-border" role="status"></div>
+                <p>Cargando trámites...</p>
+            </div>
+            <div id="tramites-table-container"></div>
+            <div id="tramites-error" class="error-msg" style="display: none;"></div>
+        </div>
+
+        <!-- Step 4: Trámite Details -->
+        <div id="step-tramite-details" class="step-container">
+            <h3>Detalles del Trámite: <span id="selected-tramite"></span></h3>
+            <button id="back-tramites" class="btn btn-secondary mb-3">← Volver a Trámites</button>
+            <div id="details-loading" class="loading">
+                <div class="spinner-border" role="status"></div>
+                <p>Cargando detalles...</p>
+            </div>
+            <div id="details-error" class="error-msg" style="display: none;"></div>
+            <ul class="nav nav-tabs" id="details-tabs">
+                <li class="nav-item"><a class="nav-link active" href="#eventos">Eventos</a></li>
+                <li class="nav-item"><a class="nav-link" href="#cambios">Cambios</a></li>
+            </ul>
+            <div class="tab-content" id="details-tab-content">
+                <div id="eventos" class="tab-pane fade show active"></div>
+                <div id="cambios" class="tab-pane fade"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        const API_BASE_URL = 'http://localhost:5000'; // Cambia para producción
+        let currentDates = { desde: '', hasta: '' };
+        let selectedRole = '';
+        let selectedUser = { nombre: '', usuario: '' };
+
+        // Utility: Show/Hide Steps
+        function showStep(stepId) {
+            document.querySelectorAll('.step-container').forEach(step => step.classList.remove('step-active'));
+            document.getElementById(stepId).classList.add('step-active');
+        }
+
+        // Utility: Default Dates (Last 30 days)
+        function setDefaultDates() {
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            document.getElementById('fecha_desde').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('fecha_hasta').value = today.toISOString().split('T')[0];
+        }
+
+        // Load Roles/Users Stats
+        async function loadRoles() {
+            const desde = document.getElementById('fecha_desde').value;
+            const hasta = document.getElementById('fecha_hasta').value;
+            if (!desde || !hasta) {
+                showError('roles-error', 'Selecciona fechas válidas.');
+                return;
+            }
+            currentDates = { desde, hasta };
+            showStep('step-roles');
+            document.getElementById('roles-loading').style.display = 'block';
+            document.getElementById('roles-table-container').innerHTML = '';
+            document.getElementById('roles-error').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/estadisticas/usuarios?fecha_desde=${desde}&fecha_hasta=${hasta}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const { data, total_registros } = await response.json();
+                document.getElementById('roles-loading').style.display = 'none';
+                renderRolesTable(data, total_registros);
+            } catch (error) {
+                document.getElementById('roles-loading').style.display = 'none';
+                showError('roles-error', `Error cargando roles: ${error.message}`);
+            }
+        }
+
+        // Render Roles Table
+        function renderRolesTable(data, total) {
+            const container = document.getElementById('roles-table-container');
+            container.innerHTML = `
+                <p class="text-muted">Total de registros: ${total}</p>
+                <table class="table table-striped table-hover">
+                    <thead><tr><th>Rol</th><th>Usuarios</th><th>Trámites</th><th>Peso Trámites</th><th>Rol ID</th></tr></thead>
+                    <tbody>
+                        ${data.map(row => `
+                            <tr class="btn-role" onclick="loadUsers('${row.rol_nombre}')">
+                                <td>${row.rol_usuario_titulo || row.rol_nombre}</td>
+                                <td>${row.usuarios}</td>
+                                <td>${row.cantidad_tramites}</td>
+                                <td>${row.peso_tramites}</td>
+                                <td>${row.rol_id}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Load Users Details for Role
+        async function loadUsers(roleName) {
+            selectedRole = roleName;
+            document.getElementById('selected-role').textContent = roleName;
+            showStep('step-users');
+            document.getElementById('users-loading').style.display = 'block';
+            document.getElementById('users-table-container').innerHTML = '';
+            document.getElementById('users-error').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/estadisticas/detalle?fecha_desde=${currentDates.desde}&fecha_hasta=${currentDates.hasta}&nombre=${encodeURIComponent(roleName)}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const { data, total_registros } = await response.json();
+                document.getElementById('users-loading').style.display = 'none';
+                renderUsersTable(data, total_registros);
+            } catch (error) {
+                document.getElementById('users-loading').style.display = 'none';
+                showError('users-error', `Error cargando usuarios: ${error.message}`);
+            }
+        }
+
+        // Render Users Table
+        function renderUsersTable(data, total) {
+            const container = document.getElementById('users-table-container');
+            container.innerHTML = `
+                <p class="text-muted">Total de registros: ${total}</p>
+                <table class="table table-striped table-hover">
+                    <thead><tr><th>Usuario</th><th>Días Laborados</th><th>Trámites</th><th>Peso</th><th>No Terminados</th><th>Eficiencia (%)</th><th>Fuera de Calendario</th><th>Eficacia (%)</th></tr></thead>
+                    <tbody>
+                        ${data.map(row => `
+                            <tr class="btn-user" onclick="loadTramites('${row.nombre_usuario}', '${row.usuario}')">
+                                <td>${row.nombre_usuario}</td>
+                                <td>${row.dias_lab}</td>
+                                <td>${row.tramites}</td>
+                                <td>${row.peso}</td>
+                                <td>${row.no_terminado}</td>
+                                <td>${row.eficiencia}</td>
+                                <td>${row.fuera}</td>
+                                <td>${row.eficacia}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Load Trámites for User
+        async function loadTramites(userName, userId) {
+            selectedUser = { nombre: userName, usuario: userId };
+            document.getElementById('selected-user').textContent = `${userName} (${userId})`;
+            showStep('step-tramites');
+            document.getElementById('tramites-loading').style.display = 'block';
+            document.getElementById('tramites-table-container').innerHTML = '';
+            document.getElementById('tramites-error').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/estadisticas/detalle_usuario?fecha_desde=${currentDates.desde}&fecha_hasta=${currentDates.hasta}&nombre=${encodeURIComponent(selectedRole)}&usuario=${encodeURIComponent(userId)}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const { data, total_registros } = await response.json();
+                document.getElementById('tramites-loading').style.display = 'none';
+                renderTramitesTable(data, total_registros);
+            } catch (error) {
+                document.getElementById('tramites-loading').style.display = 'none';
+                showError('tramites-error', `Error cargando trámites: ${error.message}`);
+            }
+        }
+
+        // Render Trámites Table
+        function renderTramitesTable(data, total) {
+            const container = document.getElementById('tramites-table-container');
+            container.innerHTML = `
+                <p class="text-muted">Total de registros: ${total}</p>
+                <table class="table table-striped table-hover">
+                    <thead><tr><th>Nº Trámite</th><th>Contrato</th><th>Beneficiario</th><th>Fecha Ingreso</th><th>Fecha Proceso</th><th>Fecha Fin</th><th>Peso</th><th>Última Acción</th><th>Cambio Cer</th><th>Pasos</th><th>Fecha Entrega</th><th>Tiempo Atraso (seg)</th></tr></thead>
+                    <tbody>
+                        ${data.map(row => `
+                            <tr class="btn-tramite" onclick="loadTramiteDetails('${row.num_tramite}')">
+                                <td>${row.num_tramite}</td>
+                                <td>${row.contrato || ''}</td>
+                                <td>${row.nombre || ''}</td>
+                                <td>${formatDate(row.fecha_ingreso)}</td>
+                                <td>${formatDate(row.fecha_proceso)}</td>
+                                <td>${formatDate(row.fecha_fin)}</td>
+                                <td>${row.peso_tramite}</td>
+                                <td>${row.ultima_accion || ''}</td>
+                                <td>${row.cambio_cer}</td>
+                                <td>${row.npasos}</td>
+                                <td>${formatDate(row.fecha_entrega)}</td>
+                                <td>${row.tiempo_atraso}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Load Trámite Details
+        async function loadTramiteDetails(numTramite) {
+            document.getElementById('selected-tramite').textContent = numTramite;
+            showStep('step-tramite-details');
+            document.getElementById('details-loading').style.display = 'block';
+            document.getElementById('details-error').style.display = 'none';
+            document.getElementById('eventos').innerHTML = '';
+            document.getElementById('cambios').innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/estadisticas/detalle_tramite?num_tramite=${numTramite}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const { data, total_eventos, total_cambios } = await response.json();
+                document.getElementById('details-loading').style.display = 'none';
+                renderEventosTable(data.eventos, total_eventos);
+                renderCambiosTable(data.cambios, total_cambios);
+                // Bootstrap tabs
+                const triggerTabList = document.querySelectorAll('#details-tabs .nav-link');
+                triggerTabList.forEach(triggerEl => {
+                    const tabTrigger = new bootstrap.Tab(triggerEl);
+                    triggerEl.addEventListener('click', event => {
+                        event.preventDefault();
+                        tabTrigger.show();
+                    });
+                });
+            } catch (error) {
+                document.getElementById('details-loading').style.display = 'none';
+                showError('details-error', `Error cargando detalles: ${error.message}`);
+            }
+        }
+
+        // Render Eventos Table
+        function renderEventosTable(data, total) {
+            document.getElementById('eventos').innerHTML = `
+                <p class="text-muted">Total de eventos: ${total}</p>
+                <table class="table table-striped">
+                    <thead><tr><th>Fecha Fin</th><th>Proceso</th><th>Usuario</th></tr></thead>
+                    <tbody>${data.map(row => `<tr><td>${formatDate(row.fecha_fin)}</td><td>${row.proceso}</td><td>${row.usuario}</td></tr>`).join('')}</tbody>
+                </table>
+            `;
+        }
+
+        // Render Cambios Table
+        function renderCambiosTable(data, total) {
+            document.getElementById('cambios').innerHTML = `
+                <p class="text-muted">Total de cambios: ${total}</p>
+                <table class="table table-striped">
+                    <thead><tr><th>Fecha Hora</th><th>Actividad</th><th>Usuario</th></tr></thead>
+                    <tbody>${data.map(row => `<tr><td>${formatDate(row.fecha_hora)}</td><td>${row.actividad}</td><td>${row.usuario}</td></tr>`).join('')}</tbody>
+                </table>
+            `;
+        }
+
+        // Utility: Format Date (ISO to readable)
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            return new Date(dateStr).toLocaleString('es-ES', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Utility: Show Error
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            setDefaultDates();
+            document.getElementById('load-roles').addEventListener('click', loadRoles);
+            document.getElementById('back-dates').addEventListener('click', () => showStep('step-dates'));
+            document.getElementById('back-roles').addEventListener('click', () => showStep('step-roles'));
+            document.getElementById('back-users').addEventListener('click', () => showStep('step-users'));
+            document.getElementById('back-tramites').addEventListener('click', () => showStep('step-tramites'));
+        });
+    </script>
+</body>
+</html>

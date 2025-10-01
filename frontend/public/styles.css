@@ -1,0 +1,75 @@
+/* General body styling */
+body {
+    background-color: #f8f9fa; /* Light gray background for contrast */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Clean, modern font */
+}
+
+/* Step containers for hierarchical navigation */
+.step-container {
+    display: none; /* Hidden by default */
+    margin: 20px 0;
+    padding: 20px;
+    background: white; /* White background for content */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* Subtle shadow for depth */
+}
+
+/* Active step visibility */
+.step-active {
+    display: block;
+}
+
+/* Loading spinner container */
+.loading {
+    text-align: center;
+    padding: 40px;
+}
+
+/* Spinner styling (matches Bootstrap primary color) */
+.spinner-border {
+    color: #007bff;
+}
+
+/* Buttons for role/user/tramite rows (clickable table rows) */
+.btn-role, .btn-user, .btn-tramite {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 5px;
+    cursor: pointer; /* Indicate clickability */
+}
+
+/* Table header styling */
+.table th {
+    background-color: #e9ecef; /* Light gray for headers */
+}
+
+/* Tab content padding */
+.tab-content {
+    padding: 20px 0;
+}
+
+/* Error message styling */
+.error-msg {
+    color: #dc3545; /* Red text */
+    background: #f8d7da; /* Light red background */
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+/* Success message styling */
+.success-msg {
+    color: #155724; /* Green text */
+    background: #d4edda; /* Light green background */
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+/* Date selection section */
+.date-section {
+    background: #e3f2fd; /* Light blue background for prominence */
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}

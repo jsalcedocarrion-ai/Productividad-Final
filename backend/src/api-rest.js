@@ -456,5 +456,5 @@ app.get('/estadisticas/detalle_tramite', async (req, res) => {
 
 // Iniciar servidor
 app.listen(port, () => {
-  console.log(`Servidor corriendo en http://localhost:${port}`);
+  console.log(`Servidor corriendo en http://192.188.2.240:${port}`);
 });

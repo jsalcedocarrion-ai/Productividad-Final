@@ -75,7 +75,7 @@ app.get('/estadisticas/usuarios', async (req, res) => {
       LEFT JOIN app.acl_user us ON us.id = rl.inscriptor 
       LEFT JOIN conf.tar_usuario_tareas ut ON ut.usuario = us.id
       LEFT JOIN app.acl_rol ro ON ro.id = ut.rol
-      WHERE rl.fecha_ingreso >= $1 AT TIME ZONE 'UTC-5' AND rl.fecha_ingreso < $2 AT TIME ZONE 'UTC+0'
+      WHERE rl.fecha_ingreso >= $1  AND rl.fecha_ingreso < $2 
       GROUP BY ro.nombre, ro.id 
       ORDER BY rol_usuario_titulo
     `;
@@ -153,19 +153,19 @@ app.get('/estadisticas/detalle', async (req, res) => {
           SELECT a.id_proceso, 
                  a.npasos, 
                  b.name_ AS ultima_accion, 
-                b.start_time_ AT TIME ZONE 'UTC+0' AS fecha_proceso
+                b.start_time_  AS fecha_proceso
           FROM n_tareas a
           LEFT JOIN act_hi_taskinst b ON a.idd = b.id_
         )
         SELECT liquidacion, 
-               ht.fecha_ingreso AT TIME ZONE 'UTC-5' AS fecha_ingreso, 
-               ht.fecha_entrega AT TIME ZONE 'UTC-5' AS fecha_entrega, 
+               ht.fecha_ingreso  AS fecha_ingreso, 
+               ht.fecha_entrega  AS fecha_entrega, 
                ht.num_tramite, 
                COUNT(*) AS ntramites,
-                ahp.end_time_ AT TIME ZONE 'UTC-5' AS end_time_,
+                ahp.end_time_  AS end_time_,
                EXTRACT(EPOCH FROM (ahp.end_time_ - np.fecha_proceso)) / 60 AS duracion_min,
                SUM(CASE 
-                  WHEN EXTRACT(EPOCH FROM (((ht.fecha_entrega::DATE)::TIMESTAMP AT TIME ZONE 'UTC-5' + INTERVAL '16 hours') - np.fecha_proceso)) < 0 
+                  WHEN EXTRACT(EPOCH FROM (((ht.fecha_entrega::DATE)::TIMESTAMP  + INTERVAL '16 hours') - np.fecha_proceso)) < 0 
                    THEN 1 
                    ELSE 0 
                  END) AS fuera_cal
@@ -174,7 +174,7 @@ app.get('/estadisticas/detalle', async (req, res) => {
         LEFT JOIN flow.historico_tramites ht ON ht.id = liq.tramite
         LEFT JOIN act_hi_procinst ahp ON ht.id_proceso = ahp.id_
         LEFT JOIN npasos np ON ahp.id_ = np.id_proceso
-        WHERE liq.fecha_ingreso >= $1 AT TIME ZONE 'UTC-5' AND liq.fecha_ingreso < $2 AT TIME ZONE 'UTC-5'
+        WHERE liq.fecha_ingreso >= $1  AND liq.fecha_ingreso < $2 
         GROUP BY liquidacion, ht.fecha_ingreso, ht.fecha_entrega, ht.num_tramite, ahp.end_time_, np.fecha_proceso
       )
         SELECT 
@@ -194,7 +194,7 @@ app.get('/estadisticas/detalle', async (req, res) => {
       LEFT JOIN conf.tar_usuario_tareas ut ON ut.usuario = us.id
       LEFT JOIN app.acl_rol ro ON ro.id = ut.rol
       LEFT JOIN app.cat_ente ce ON us.ente = ce.id
-      WHERE rl.fecha_ingreso >= $1 AT TIME ZONE 'UTC-5' AND rl.fecha_ingreso < $2 AT TIME ZONE 'UTC-5' AND ro.nombre = $3
+      WHERE rl.fecha_ingreso >= $1  AND rl.fecha_ingreso < $2  AND ro.nombre = $3
       GROUP BY (COALESCE(ce.apellidos, '') || ' ' || COALESCE(ce.nombres, '')), us.usuario, ro.nombre 
       ORDER BY nombre_usuario
     `;
@@ -286,21 +286,21 @@ app.get('/estadisticas/detalle_usuario', async (req, res) => {
 		from act_hi_taskinst aht 
 		group by proc_inst_id_
 	)
-	select a.id_proceso, a.npasos, b.name_ as ultima_accion, b.start_time_ AT TIME ZONE 'UTC-5' AS fecha_proceso
+	select a.id_proceso, a.npasos, b.name_ as ultima_accion, b.start_time_  AS fecha_proceso
 	from n_tareas a
 	left join act_hi_taskinst b on a.idd = b.id_
 )
 select ht.num_tramite, 
        ac.nombre::character(100) as contrato, 
        (coalesce(en.apellidos ||' '||COALESCE(en.nombres,''),en.razon_social))::character(100) as nombre,
-       ht.fecha_ingreso AT TIME ZONE 'UTC-5' AS fecha_ingreso, 
+       ht.fecha_ingreso  AS fecha_ingreso, 
        np.fecha_proceso as fecha_proceso,
-        ahp.end_time_ AT TIME ZONE 'UTC-5' AS fecha_fin, 
+        ahp.end_time_  AS fecha_fin, 
        liq.peso_tramite, 
        np.ultima_accion::character(100), 
        0 + 0 as cambio_cer,
        np.npasos,
-       ht.fecha_entrega AT TIME ZONE 'UTC-5' AS fecha_entrega,
+       ht.fecha_entrega AS fecha_entrega,
        EXTRACT(epoch from (((ht.fecha_entrega::date)::timestamp without time zone + '16 hours') - np.fecha_proceso )) as tiempo_atraso
 from flow.regp_liquidacion_detalles rld
 left join app.reg_acto ac on ac.id = rld.acto
@@ -387,7 +387,7 @@ app.get('/estadisticas/detalle_tramite', async (req, res) => {
       // Primera consulta: Eventos
       const eventosQuery = `
         SELECT 
-          aht.end_time_ AT TIME ZONE 'UTC-5' AS fecha_fin,  
+          aht.end_time_  AS fecha_fin,  
           aht.name_::CHARACTER(250) AS proceso, 
           aht.assignee_::CHARACTER(250) AS usuario
         FROM flow.regp_liquidacion_detalles rld
@@ -402,7 +402,7 @@ app.get('/estadisticas/detalle_tramite', async (req, res) => {
       // Segunda consulta: Cambios
       const cambiosQuery = `
         SELECT 
-          rb.fecha_hora AT TIME ZONE 'UTC-5' AS fecha_hora, 
+          rb.fecha_hora  AS fecha_hora, 
           rb.actividad::CHARACTER(250) AS actividad, 
           au.usuario
         FROM flow.historico_tramites ht

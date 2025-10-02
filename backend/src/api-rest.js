@@ -1,17 +1,18 @@
 const express = require('express');
 const { Pool } = require('pg');
-//const cors = require('cors');
+const cors = require('cors');
 
 const app = express();
 
 // Middleware para parsear JSON y CORS
 app.use(express.json());
-//app.use(cors({
-  //origin: '*',  // Permite cualquier origen (incluyendo file:// y localhost:puertos)
-  //methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Métodos permitidos
- // allowedHeaders: ['Content-Type', 'Authorization']  // Headers permitidos
-//}));
-const port = process.env.PORT || 5000;
+app.use(cors({
+  origin: '*',  // Permite cualquier origen (incluyendo file:// y localhost:puertos)
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Métodos permitidos
+  allowedHeaders: ['Content-Type', 'Authorization']  // Headers permitidos
+}));
+
+const port = process.env.PORT || 443;
 
 
 
@@ -456,5 +457,5 @@ app.get('/estadisticas/detalle_tramite', async (req, res) => {
 
 // Iniciar servidor
 app.listen(port, () => {
-  console.log(`Servidor corriendo en http://192.188.2.240:${port}`);
+  console.log(`Servidor corriendo en https://192.188.2.240:${port}`);
 });

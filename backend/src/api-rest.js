@@ -278,6 +278,8 @@ app.get('/estadisticas/detalle_usuario', async (req, res) => {
         });
       }
   
+ 
+
       // Consulta SQL adaptada para detalles por trámite de un usuario específico
       const query = `
  with npasos as (
@@ -354,6 +356,7 @@ const processedRows = result.rows.map(row => {
               });
              }
              });
+
 
 /////////////////////////////////////////////
 /////////////////////////////////////////////

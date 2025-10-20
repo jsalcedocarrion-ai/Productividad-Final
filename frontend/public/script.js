@@ -258,23 +258,6 @@ function drawEficaciaChart() {
     });
   }
 }
-renderEficaciaDetalle();
-
-
-//function renderEficaciaDetalle() {
-  //let html = '<table class="table table-sm table-striped">';
-  //html += '<thead><tr><th>Usuario</th><th>Eficacia (%)</th></tr></thead><tbody>';
-  
-  //usersData.forEach(row => {
-    //html += `<tr>
-      //<td>${row.nombre_usuario}</td>
-      //<td>${row.eficacia}%</td>
-    //</tr>`;
-  //});
-
-  //html += '</tbody></table>';
-  //document.getElementById('eficaciaDetalle').innerHTML = html;
-//}
 
 
 function loadTramites(usuario) {

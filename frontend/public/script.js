@@ -127,8 +127,14 @@ function drawTramitesChart() {
 
   if (usersData.length > 0) {
     const ctx = canvas.getContext('2d');
-    const labels = usersData.map(row => row.nombre_usuario || 'Desconocido');
-    const dataValues = usersData.map(row => parseFloat(row.tramites) || 0);
+    const labels = usersData.map(row => {
+    //const labels = usersData.map(row => row.nombre_usuario || 'Desconocido');
+    const nombre = row.nombre_usuario || row.usuario || 'Desconocido';
+
+
+     return nombre.length > 20 ? nombre.substring(0, 20) + '...' : nombre;
+  });
+  const dataValues = usersData.map(row => parseFloat(row.tramites) || 0);
 
     tramitesChart = new Chart(ctx, {
       type: 'bar',
@@ -157,7 +163,15 @@ function drawTramitesChart() {
           y: { 
             ticks: { 
               autoSkip: false,
-              font: { size: 12 }
+              font: { 
+                size: 12,
+                family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+              },
+              maxRotation: 45,
+              minRotation: 0
+            },
+            afterFit: function(scale) {
+              scale.width = 150; // Aumentar el ancho del eje Y para nombres largos
             }
           }
         },
@@ -193,8 +207,19 @@ function drawEficaciaChart() {
 
   if (usersData.length > 0) {
     const ctx = document.getElementById('eficaciaChart').getContext('2d');
-    const labels = usersData.map(row => row.nombre_usuario);
-    const dataValues = usersData.map(row => row.eficacia);
+
+
+    // Obtener nombres de usuario, usando 'usuario' como fallback si 'nombre_usuario' está vacío
+    const labels = usersData.map(row => {
+      const nombre = row.nombre_usuario || row.usuario || 'Desconocido';
+      // Acortar nombres muy largos para mejor visualización
+      return nombre.length > 20 ? nombre.substring(0, 20) + '...' : nombre;
+    });
+    
+    const dataValues = usersData.map(row => parseFloat(row.eficacia) || 0);
+
+   // const labels = usersData.map(row => row.nombre_usuario);
+    //const dataValues = usersData.map(row => row.eficacia);
 
     eficaciaChart = new Chart(ctx, {
       type: 'bar',
@@ -223,10 +248,16 @@ function drawEficaciaChart() {
           },
           y: { 
             ticks: { 
-              //autoSkip: false,  
-              font: { size: 12 },
-              display: true,
-              text: 'Usuarios'
+              autoSkip: false,  
+              font: { 
+                size: 12,
+                family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+              },
+              maxRotation: 45,
+              minRotation: 0
+            },
+            afterFit: function(scale) {
+              scale.width = 150; // Aumentar el ancho del eje Y para nombres largos
             }
           }
         },
@@ -242,22 +273,23 @@ function drawEficaciaChart() {
             }
           },
           datalabels: {
-            anchor: 'end',        // posición en la barra
-            align: 'end',         // alineación del texto
+            anchor: 'end',
+            align: 'end',
             formatter: function(value) {
-              return value + '%'; // muestra porcentaje
+              return value + '%';
             },
-            color: '#000',        // color del texto
+            color: '#000',
             font: {
               weight: 'bold'
             }
           }
         }
       },
-      plugins: [ChartDataLabels] // 🔹 activar plugin
+      plugins: [ChartDataLabels]
     });
   }
 }
+
 
 
 function loadTramites(usuario) {

@@ -258,10 +258,23 @@ function drawEficaciaChart() {
     });
   }
 }
-//renderEficaciaDetalle();
+renderEficaciaDetalle();
 
 
+//function renderEficaciaDetalle() {
+  //let html = '<table class="table table-sm table-striped">';
+  //html += '<thead><tr><th>Usuario</th><th>Eficacia (%)</th></tr></thead><tbody>';
+  
+  //usersData.forEach(row => {
+    //html += `<tr>
+      //<td>${row.nombre_usuario}</td>
+      //<td>${row.eficacia}%</td>
+    //</tr>`;
+  //});
 
+  //html += '</tbody></table>';
+  //document.getElementById('eficaciaDetalle').innerHTML = html;
+//}
 
 
 function loadTramites(usuario) {
@@ -271,7 +284,8 @@ function loadTramites(usuario) {
   document.getElementById('tramitesTable').innerHTML = '<div class="loading"><div class="spinner-border"></div> Cargando trámites...</div>';
   document.getElementById('tramitesPagination').innerHTML = '';
   document.getElementById('tramiteFilter').value = '';
-
+  //sortColumn = null;
+  //sortAscending = true;
 
   const url = `http://localhost:5000/estadisticas/detalle_usuario?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${currentRol}&usuario=${usuario}`;
   
@@ -279,7 +293,8 @@ function loadTramites(usuario) {
     .then(res => res.json())
     .then(data => {
       if (data.success && data.data) {
-        originalTramitesRows = [...data.data];
+        allTramitesRows = data.data;
+        //originalTramitesRows = [...data.data];
         populateTramitesTable(data.data);
         renderTramitesTable();
       } else {
@@ -377,7 +392,7 @@ function goToTramitesPage(page) {
   renderTramitesTable();
 }
 
-function loadDetalleTramite(numTramite) {
+function loadDetalleTramite(numTramite, pagina = 1) {
   document.getElementById('currentTramite').innerHTML = numTramite;
   showStep(5);
 
@@ -390,47 +405,33 @@ function loadDetalleTramite(numTramite) {
     setTimeout(() => reject(new Error('Timeout excedido')), 10000)
   );
 
-   Promise.race([
+  Promise.race([
     fetch(url),
     timeoutPromise
   ])
-  .then(res => {
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
-    }
-    return res.json();
-  })
+  .then(res => res.json())
   .then(data => {
-    console.log('Datos completos recibidos:', data);
-    
+    console.log('Datos recibidos:', data);
     if (data.success) {
-      // Manejar diferentes estructuras de respuesta
-      let eventos = [];
-      let cambios = [];
-      
-      if (data.data) {
-        eventos = data.data.eventos || data.data.Eventos || [];
-        cambios = data.data.cambios || data.data.Cambios || [];
-      } else {
-        eventos = data.eventos || data.Eventos || [];
-        cambios = data.cambios || data.Cambios || [];
-      }
-      
-      console.log('Eventos encontrados:', eventos.length);
-      console.log('Cambios encontrados:', cambios.length);
-      
-      populateEventosTable(eventos);
-      populateCambiosTable(cambios);
-      
+      const eventos = (data.data && data.data.eventos) || data.eventos || [];
+      const cambios = (data.data && data.data.cambios) || data.cambios || [];
+      console.log('Eventos:', eventos.length, 'Cambios:', cambios.length);
+      Promise.all([
+        populateEventosTable(data.data.eventos),
+        populateCambiosTable(data.data.cambios)
+      ]).then(() => {
+        console.log('Ambas tablas cargadas correctamente');
+        //new bootstrap.Tab(document.querySelector('cambios-tab')).show(); // Ensure Cambios tab is active
+      });
     } else {
-      showError('Error al cargar datos del trámite: ' + (data.message || 'Sin datos'));
+      showError('Error al cargar datos del trámite');
     }
   })
   .catch(err => {
-    console.error('Error completo:', err);
+    console.error('Error:', err);
     showError(err.message.includes('Timeout') ? 
       'La consulta está tomando demasiado tiempo. Intente con menos datos.' : 
-      `Error de conexión: ${err.message}`
+      'Error de conexión'
     );
   });
 }
@@ -463,12 +464,7 @@ function populateCambiosTable(rows) {
     table += '<tr><td colspan="3" class="text-center">No hay cambios para mostrar</td></tr>';
   } else {
     rows.forEach(row => {
-      const actividadConSaltos = (row.actividad || '').replace(/\n/g, '<br>');
-      table += `<tr>
-        <td>${formatDate(row.fecha_hora)}</td>
-        <td>${actividadConSaltos}</td>
-        <td>${row.usuario}</td>
-      </tr>`;
+      table += `<tr><td>${formatDate(row.fecha_hora)}</td><td>${row.actividad}</td><td>${row.usuario}</td></tr>`;
     });
   }
   table += '</tbody></table>';
@@ -505,7 +501,10 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-
+document.getElementById('loadMoreTramitesBtn').addEventListener('click', () => {
+  currentTramiteIndex += tramitesPorPagina;
+  renderTramitesTable();
+});
 
 function filterTramites() {
   const filterValue = document.getElementById('tramiteFilter').value.trim().toLowerCase();

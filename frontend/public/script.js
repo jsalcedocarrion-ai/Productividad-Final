@@ -103,6 +103,7 @@ function populateUsersTable(rows, maxItems = 10) {
   const limitedRows = rows
     .sort((a, b) => parseFloat(b.tramites) - parseFloat(a.tramites))
     .slice(0, maxItems);
+    
   rows.forEach(row => {
     table += `<tr style="cursor: pointer;" onclick="loadTramites('${row.usuario}')"><td>${row.nombre_usuario}</td><td>${row.dias_lab}</td><td>${row.ntram}</td><td>${row.tramites}</td><td>${row.peso}</td><td>${row.no_terminado}</td><td>${row.eficiencia}%</td><td>${row.fuera}</td><td>${row.eficacia}%</td></tr>`;
   });
@@ -299,8 +300,8 @@ function loadTramites(usuario) {
   document.getElementById('tramitesTable').innerHTML = '<div class="loading"><div class="spinner-border"></div> Cargando trámites...</div>';
   document.getElementById('tramitesPagination').innerHTML = '';
   document.getElementById('tramiteFilter').value = '';
-  //sortColumn = null;
-  //sortAscending = true;
+  sortColumn = null;
+  sortAscending = true;
 
   const url = `http://localhost:5000/estadisticas/detalle_usuario?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${currentRol}&usuario=${usuario}`;
   
@@ -309,7 +310,7 @@ function loadTramites(usuario) {
     .then(data => {
       if (data.success && data.data) {
         allTramitesRows = data.data;
-        //originalTramitesRows = [...data.data];
+        originalTramitesRows = [...data.data]; // ✅ INICIALIZAR AQUÍ
         populateTramitesTable(data.data);
         renderTramitesTable();
       } else {
@@ -549,7 +550,16 @@ function filterNombre() {
 
 function clearFilter() {
   document.getElementById('tramiteFilter').value = '';
-  allTramitesRows = [...originalTramitesRows];
+  
+  // Restaurar los datos originales
+  if (originalTramitesRows && originalTramitesRows.length > 0) {
+    allTramitesRows = [...originalTramitesRows];
+  }
+  
+  // Restablecer paginación
+  currentPage = 1;
+  
+  // Si había una columna ordenada, re-aplicar el orden
   if (sortColumn) {
     sortByDate(sortColumn);
   } else {

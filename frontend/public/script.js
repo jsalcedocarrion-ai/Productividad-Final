@@ -517,10 +517,7 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-document.getElementById('loadMoreTramitesBtn').addEventListener('click', () => {
-  currentTramiteIndex += tramitesPorPagina;
-  renderTramitesTable();
-});
+
 
 function filterTramites() {
   const filterValue = document.getElementById('tramiteFilter').value.trim().toLowerCase();

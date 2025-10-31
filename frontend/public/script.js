@@ -130,10 +130,11 @@ function drawTramitesChart() {
     const ctx = canvas.getContext('2d');
     const labels = usersData.map(row => {
     //const labels = usersData.map(row => row.nombre_usuario || 'Desconocido');
-    const nombre = row.nombre_usuario || row.usuario || 'Desconocido';
+    //const nombre = row.nombre_usuario || row.usuario || 'Desconocido';
+      const nombre = row.nombre_usuario || row.usuario || 'Desconocido';
+      return splitNameIntoTwoLines(nombre, 20); // 20 caracteres por línea
 
-
-     return nombre.length > 20 ? nombre.substring(0, 20) + '...' : nombre;
+     //return nombre.length > 20 ? nombre.substring(0, 20) + '...' : nombre;
   });
   const dataValues = usersData.map(row => parseFloat(row.tramites) || 0);
 
@@ -165,14 +166,16 @@ function drawTramitesChart() {
             ticks: { 
               autoSkip: false,
               font: { 
-                size: 12,
-                family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+                size: 11,
+                family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+                lineHeight: 1.2
               },
-              maxRotation: 45,
-              minRotation: 0
+              maxRotation: 0,
+              minRotation: 0,
+              padding: 10
             },
             afterFit: function(scale) {
-              scale.width = 150; // Aumentar el ancho del eje Y para nombres largos
+              scale.width = 200; // Aumentar el ancho del eje Y para nombres largos
             }
           }
         },
@@ -182,6 +185,10 @@ function drawTramitesChart() {
             callbacks: {
               label: function(context) {
                 return context.parsed.x + ' trámites';
+              },
+              title: function(tooltipItems) {
+                const index = tooltipItems[0].dataIndex;
+                return usersData[index].nombre_usuario || usersData[index].usuario || 'Desconocido';
               }
             }
           },
@@ -192,14 +199,60 @@ function drawTramitesChart() {
               return value;
             },
             color: '#000',
-            font: { weight: 'bold' }
+            font: { weight: 'bold', size: 10 }
           }
         }
       },
+      layout: { padding: { left: 10, right: 10, top: 10, bottom: 20 }
+    },
       plugins: [ChartDataLabels]
     });
   }
 }
+
+// 🔹 FUNCIÓN PARA DIVIDIR TEXTO EN DOS LÍNEAS
+function splitNameIntoTwoLines(name, maxCharsPerLine) {
+  if (!name || name.length <= maxCharsPerLine) {
+    return name;
+  }
+  
+  const words = name.split(' ');
+  let line1 = '';
+  let line2 = '';
+  
+  // Primera línea: hasta la mitad aproximada del texto
+  const midPoint = Math.floor(name.length / 2);
+  let currentLength = 0;
+  
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    if (currentLength + word.length <= midPoint) {
+      line1 += (line1 ? ' ' : '') + word;
+      currentLength += word.length + 1;
+    } else {
+      // El resto va a la segunda línea
+      line2 = words.slice(i).join(' ');
+      break;
+    }
+  }
+  
+  // Si no se dividió, dividir por la mitad
+  if (!line2) {
+    line1 = name.substring(0, midPoint).trim();
+    line2 = name.substring(midPoint).trim();
+  }
+  
+  // Acortar si es necesario
+  if (line1.length > maxCharsPerLine) {
+    line1 = line1.substring(0, maxCharsPerLine - 3) + '...';
+  }
+  if (line2.length > maxCharsPerLine) {
+    line2 = line2.substring(0, maxCharsPerLine - 3) + '...';
+  }
+  
+  return [line1, line2];
+}
+
 
 function drawEficaciaChart() {
   if (eficaciaChart) {
@@ -214,7 +267,7 @@ function drawEficaciaChart() {
     const labels = usersData.map(row => {
       const nombre = row.nombre_usuario || row.usuario || 'Desconocido';
       // Acortar nombres muy largos para mejor visualización
-      return nombre.length > 20 ? nombre.substring(0, 20) + '...' : nombre;
+      return splitNameIntoTwoLines(nombre, 20);
     });
     
     const dataValues = usersData.map(row => parseFloat(row.eficacia) || 0);
@@ -251,14 +304,16 @@ function drawEficaciaChart() {
             ticks: { 
               autoSkip: false,  
               font: { 
-                size: 12,
-                family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+                size: 11,
+                family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+                lineHeight: 1.2
               },
               maxRotation: 45,
-              minRotation: 0
+              minRotation: 0,
+              padding: 10
             },
             afterFit: function(scale) {
-              scale.width = 150; // Aumentar el ancho del eje Y para nombres largos
+              scale.width = 200; // Aumentar el ancho del eje Y para nombres largos
             }
           }
         },
@@ -269,7 +324,11 @@ function drawEficaciaChart() {
           tooltip: {
             callbacks: {
               label: function(context) {
-                return context.parsed.x + '%';
+              return context.parsed.x + '%';
+              },
+              title: function(tooltipItems) {
+                const index = tooltipItems[0].dataIndex;
+                return usersData[index].nombre_usuario || usersData[index].usuario || 'Desconocido';
               }
             }
           },
@@ -281,8 +340,16 @@ function drawEficaciaChart() {
             },
             color: '#000',
             font: {
-              weight: 'bold'
+              weight: 'bold', size: 10
             }
+          }
+        },
+        layout: {
+          padding: {
+            left: 10,
+            right: 10,
+            top: 10,
+            bottom: 10
           }
         }
       },

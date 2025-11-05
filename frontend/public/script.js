@@ -47,7 +47,7 @@ function loadRoles() {
   showStep(2);
   document.getElementById('rolesTable').innerHTML = '<div class="loading"><div class="spinner-border"></div> Cargando roles...</div>';
 
-  const url = `http://localhost:5000/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
+  const url = `http://192.188.2.240:5000/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
   fetch(url)
     .then(res => res.json())
     .then(data => {
@@ -82,7 +82,7 @@ function loadUsers(rolNombre) {
   tramitesChart = null;
   eficaciaChart = null;
 
-  const url = `http://localhost:5000/estadisticas/detalle?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${rolNombre}`;
+  const url = `http://192.188.2.240:5000/estadisticas/detalle?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${rolNombre}`;
   fetch(url)
     .then(res => res.json())
     .then(data => {
@@ -374,7 +374,7 @@ function loadTramites(usuario) {
   sortColumn = null;
   sortAscending = true;
 
-  const url = `http://localhost:5000/estadisticas/detalle_usuario?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${currentRol}&usuario=${usuario}`;
+  const url = `http://192.188.2.240:5000/estadisticas/detalle_usuario?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${currentRol}&usuario=${usuario}`;
   
   fetch(url)
     .then(res => res.json())
@@ -490,7 +490,7 @@ function loadDetalleTramite(numTramite, pagina = 1) {
   console.log('Iniciando carga de detalles para trámite:', numTramite);
   document.getElementById('eventosTable').innerHTML = '<div class="loading"><div class="spinner-border"></div> Cargando eventos...</div>';
   document.getElementById('cambiosTable').innerHTML = '<div class="loading"><div class="spinner-border"></div> Cargando cambios...</div>';
-  const url = `http://localhost:5000/estadisticas/detalle_tramite?num_tramite=${numTramite}`;
+  const url = `http://192.188.2.240:5000/estadisticas/detalle_tramite?num_tramite=${numTramite}`;
 
   const timeoutPromise = new Promise((_, reject) => 
     setTimeout(() => reject(new Error('Timeout excedido')), 10000)

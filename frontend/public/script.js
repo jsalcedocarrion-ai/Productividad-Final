@@ -128,20 +128,16 @@ function drawTramitesChart() {
 
   if (usersData.length > 0) {
     const ctx = canvas.getContext('2d');
-    const labels = usersData.map(row => {
-    //const labels = usersData.map(row => row.nombre_usuario || 'Desconocido');
-    //const nombre = row.nombre_usuario || row.usuario || 'Desconocido';
-      const nombre = row.nombre_usuario || row.usuario || 'Desconocido';
-      return splitNameIntoTwoLines(nombre, 20); // 20 caracteres por línea
-
-     //return nombre.length > 20 ? nombre.substring(0, 20) + '...' : nombre;
-  });
-  const dataValues = usersData.map(row => parseFloat(row.tramites) || 0);
+    
+    const dataValues = usersData.map(row => parseFloat(row.tramites) || 0);
+    const fullNames = usersData.map(row => 
+      row.nombre_usuario || row.usuario || 'Desconocido'
+    );
 
     tramitesChart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: labels,
+        labels: fullNames,
         datasets: [{
           label: 'Cantidad de Trámites',
           data: dataValues,
@@ -151,31 +147,53 @@ function drawTramitesChart() {
         }]
       },
       options: {
-        indexAxis: 'y',   // 🔹 gráfico horizontal
+        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
         scales: {
           x: { 
             beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Número de Trámites'
-            }
+            title: { display: true, text: 'Número de Trámites' }
           },
           y: { 
             ticks: { 
               autoSkip: false,
               font: { 
                 size: 11,
-                family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
-                lineHeight: 1.2
+                family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
               },
               maxRotation: 0,
               minRotation: 0,
-              padding: 10
+              padding: 20,
+              // 🔹 FUNCIÓN SIMPLE MULTILÍNEA
+              callback: function(value, index, values) {
+                const name = fullNames[index];
+                if (!name) return '';
+                
+                // Dividir en dos líneas aproximadamente por la mitad
+                const mid = Math.ceil(name.length / 2);
+                
+                // Buscar un espacio cerca del punto medio para dividir naturalmente
+                let splitIndex = mid;
+                for (let i = 0; i < 5; i++) {
+                  if (name[mid + i] === ' ') {
+                    splitIndex = mid + i;
+                    break;
+                  }
+                  if (name[mid - i] === ' ') {
+                    splitIndex = mid - i;
+                    break;
+                  }
+                }
+                
+                const line1 = name.substring(0, splitIndex).trim();
+                const line2 = name.substring(splitIndex).trim();
+                
+                return line1 + '\n' + line2;
+              }
             },
             afterFit: function(scale) {
-              scale.width = 200; // Aumentar el ancho del eje Y para nombres largos
+              scale.width = 250; // Espacio suficiente para dos líneas
             }
           }
         },
@@ -185,10 +203,6 @@ function drawTramitesChart() {
             callbacks: {
               label: function(context) {
                 return context.parsed.x + ' trámites';
-              },
-              title: function(tooltipItems) {
-                const index = tooltipItems[0].dataIndex;
-                return usersData[index].nombre_usuario || usersData[index].usuario || 'Desconocido';
               }
             }
           },
@@ -203,8 +217,6 @@ function drawTramitesChart() {
           }
         }
       },
-      layout: { padding: { left: 10, right: 10, top: 10, bottom: 20 }
-    },
       plugins: [ChartDataLabels]
     });
   }
@@ -255,30 +267,20 @@ function splitNameIntoTwoLines(name, maxCharsPerLine) {
 
 
 function drawEficaciaChart() {
-  if (eficaciaChart) {
-    eficaciaChart.destroy();
-  }
+  if (eficaciaChart) eficaciaChart.destroy();
 
   if (usersData.length > 0) {
     const ctx = document.getElementById('eficaciaChart').getContext('2d');
-
-
-    // Obtener nombres de usuario, usando 'usuario' como fallback si 'nombre_usuario' está vacío
-    const labels = usersData.map(row => {
-      const nombre = row.nombre_usuario || row.usuario || 'Desconocido';
-      // Acortar nombres muy largos para mejor visualización
-      return splitNameIntoTwoLines(nombre, 20);
-    });
     
     const dataValues = usersData.map(row => parseFloat(row.eficacia) || 0);
-
-   // const labels = usersData.map(row => row.nombre_usuario);
-    //const dataValues = usersData.map(row => row.eficacia);
+    const fullNames = usersData.map(row => 
+      row.nombre_usuario || row.usuario || 'Desconocido'
+    );
 
     eficaciaChart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: labels,
+        labels: fullNames,
         datasets: [{
           label: 'Eficacia (%)',
           data: dataValues,
@@ -288,47 +290,60 @@ function drawEficaciaChart() {
         }]
       },
       options: {
-        indexAxis: 'y',   // 🔹 Gráfico horizontal
+        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
         scales: {
           x: { 
             beginAtZero: true, 
             max: 100,
-            title: {
-              display: true,
-              text: 'Eficacia (%)'
-            }
+            title: { display: true, text: 'Eficacia (%)' }
           },
           y: { 
             ticks: { 
               autoSkip: false,  
               font: { 
                 size: 11,
-                family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
-                lineHeight: 1.2
+                family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
               },
-              maxRotation: 45,
+              maxRotation: 0,
               minRotation: 0,
-              padding: 10
+              padding: 20,
+              callback: function(value, index, values) {
+                const name = fullNames[index];
+                if (!name) return '';
+                
+                const mid = Math.ceil(name.length / 2);
+                let splitIndex = mid;
+                
+                for (let i = 0; i < 5; i++) {
+                  if (name[mid + i] === ' ') {
+                    splitIndex = mid + i;
+                    break;
+                  }
+                  if (name[mid - i] === ' ') {
+                    splitIndex = mid - i;
+                    break;
+                  }
+                }
+                
+                const line1 = name.substring(0, splitIndex).trim();
+                const line2 = name.substring(splitIndex).trim();
+                
+                return line1 + '\n' + line2;
+              }
             },
             afterFit: function(scale) {
-              scale.width = 200; // Aumentar el ancho del eje Y para nombres largos
+              scale.width = 250;
             }
           }
         },
         plugins: {
-          legend: {
-            position: 'top'
-          },
+          legend: { position: 'top' },
           tooltip: {
             callbacks: {
               label: function(context) {
-              return context.parsed.x + '%';
-              },
-              title: function(tooltipItems) {
-                const index = tooltipItems[0].dataIndex;
-                return usersData[index].nombre_usuario || usersData[index].usuario || 'Desconocido';
+                return context.parsed.x + '%';
               }
             }
           },
@@ -339,17 +354,7 @@ function drawEficaciaChart() {
               return value + '%';
             },
             color: '#000',
-            font: {
-              weight: 'bold', size: 10
-            }
-          }
-        },
-        layout: {
-          padding: {
-            left: 10,
-            right: 10,
-            top: 10,
-            bottom: 10
+            font: { weight: 'bold', size: 10 }
           }
         }
       },
@@ -357,7 +362,6 @@ function drawEficaciaChart() {
     });
   }
 }
-
 
 
 function loadTramites(usuario) {

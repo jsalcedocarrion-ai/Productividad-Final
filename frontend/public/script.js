@@ -159,7 +159,7 @@ function drawTramitesChart() {
             ticks: { 
               autoSkip: false,
               font: { 
-                size: 11,
+                size: 10,
                 family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
               },
               maxRotation: 0,
@@ -303,7 +303,7 @@ function drawEficaciaChart() {
             ticks: { 
               autoSkip: false,  
               font: { 
-                size: 11,
+                size: 10,
                 family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
               },
               maxRotation: 0,

@@ -449,7 +449,7 @@ function renderTramitesPagination() {
   }
   
   let buttons = '';
-  
+   //Boton anterior
   if (currentPage > 1) {
     buttons += `<button class="btn btn-sm btn-outline-secondary mx-1" onclick="goToTramitesPage(${currentPage - 1})">← Anterior</button>`;
   }
@@ -457,10 +457,14 @@ function renderTramitesPagination() {
   const startPage = Math.max(1, currentPage - 2);
   const endPage = Math.min(totalPages, currentPage + 2);
   
+
+  //Boton numeros
   for (let i = startPage; i <= endPage; i++) {
     buttons += `<button class="btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-outline-primary'} mx-1" onclick="goToTramitesPage(${i})">${i}</button>`;
   }
   
+
+  //Boton siguiente
   if (currentPage < totalPages) {
     buttons += `<button class="btn btn-sm btn-outline-secondary mx-1" onclick="goToTramitesPage(${currentPage + 1})">Siguiente →</button>`;
   }
@@ -589,31 +593,43 @@ function formatDate(dateStr) {
 function filterTramites() {
   const filterValue = document.getElementById('tramiteFilter').value.trim().toLowerCase();
   if (filterValue === '') {
-    renderTramitesTable();
+    //renderTramitesTable();
+    allTramitesRows = [...allTramitesRows];
+
   } else {
     const filteredRows = allTramitesRows.filter(row => 
       row.num_tramite && row.num_tramite.toString().toLowerCase().includes(filterValue)
     );
     allTramitesRows = filteredRows;
-    renderTramitesTable();
   }
-}
+    //renderTramitesTable();
+  currentPage = 1;
+  renderTramitesTable();
+  }
+
 
 function filterNombre() {
   const filterValue = document.getElementById('tramiteFilter').value.trim().toLowerCase();
   if (filterValue === '') {
-    renderTramitesTable();
+    allTramitesRows = [...allTramitesRows];
+    //renderTramitesTable();
   } else {
     const filteredRows = allTramitesRows.filter(row => 
       row.nombre && row.nombre.toString().toLowerCase().includes(filterValue)
     );
     allTramitesRows = filteredRows;
-    renderTramitesTable();
+    //renderTramitesTable();
   }
+  currentPage = 1;
+  renderTramitesTable();
 }
 
 function clearFilter() {
   document.getElementById('tramiteFilter').value = '';
+
+  allTramitesRows = [...originalTramitesRows];
+
+  currentPage = 1;
   
   // Restaurar los datos originales
   if (originalTramitesRows && originalTramitesRows.length > 0) {

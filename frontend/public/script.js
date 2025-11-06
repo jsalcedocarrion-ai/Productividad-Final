@@ -33,34 +33,51 @@ function backToStep4() {
 }
 
 function loadRoles() {
-  fechaDesde = document.getElementById('fechaDesde').value;
-  fechaHasta = document.getElementById('fechaHasta').value;
-
+  const fechaDesde = document.getElementById('fechaDesde').value;
+  const fechaHasta = document.getElementById('fechaHasta').value;
+  
   if (!fechaDesde || !fechaHasta) {
-    const today = new Date();
-    fechaHasta = today.toISOString().split('T')[0];
-    const lastMonth = new Date(today);
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    fechaDesde = lastMonth.toISOString().split('T')[0];
+    alert('Por favor selecciona ambas fechas');
+    return;
   }
 
-  showStep(2);
-  document.getElementById('rolesTable').innerHTML = '<div class="loading"><div class="spinner-border"></div> Cargando roles...</div>';
-
-  const url = `http://192.188.2.240:5000/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
-  //const url = `https://undealt-hystricomorphic-velma.ngrok-free.dev/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
-  fetch(url)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        populateRolesTable(data.data);
-      } else {
-        document.getElementById('rolesTable').innerHTML = '<p class="error-msg">Error al cargar roles.</p>';
-      }
-    })
-    .catch(err => {
-      document.getElementById('rolesTable').innerHTML = '<p class="error-msg">Error de conexión roles.</p>';
-    });
+  // Si la URL anterior no funciona, obtén una nueva con ngrok
+  const baseURL = 'https://undealt-hystricomorphic-velma.ngrok-free.dev';
+  const url = `${baseURL}/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
+  
+  console.log('🔗 Consultando URL:', url);
+  
+  // Configuración de fetch con headers para CORS
+  fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'ngrok-skip-browser-warning': 'true' // Para evitar bloqueos de ngrok
+    },
+    mode: 'cors'
+  })
+  .then(response => {
+    console.log('📡 Status de respuesta:', response.status);
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('✅ Datos recibidos:', data);
+    if (data.success) {
+      populateRolesTable(data.data);
+    } else {
+      document.getElementById('rolesTable').innerHTML = 
+        '<p class="error-msg">Error en los datos: ' + (data.error || 'Desconocido') + '</p>';
+    }
+  })
+  .catch(error => {
+    console.error('❌ Error completo:', error);
+    document.getElementById('rolesTable').innerHTML = 
+      '<p class="error-msg">Error de conexión: ' + error.message + '</p>';
+  });
 }
 
 function populateRolesTable(rows) {

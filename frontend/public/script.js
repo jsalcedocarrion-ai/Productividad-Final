@@ -48,7 +48,7 @@ function loadRoles() {
   document.getElementById('rolesTable').innerHTML = '<div class="loading"><div class="spinner-border"></div> Cargando roles...</div>';
 
   //const url = `http://192.188.2.240:5000/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
-  const url = `https://undealt-hystricomorphic-velma.ngrok-free.dev /estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
+  const url = `https://undealt-hystricomorphic-velma.ngrok-free.dev/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
   fetch(url)
     .then(res => res.json())
     .then(data => {

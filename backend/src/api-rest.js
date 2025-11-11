@@ -283,14 +283,14 @@ app.get('/estadisticas/detalle_usuario', async (req, res) => {
       // Consulta SQL adaptada para detalles por trámite de un usuario específico
       const query = `
  with npasos as (
-	with n_tareas as (		
-		select proc_inst_id_ as id_proceso, count(*) as npasos, max(id_) as idd 
-		from act_hi_taskinst aht 
-		group by proc_inst_id_
-	)
-	select a.id_proceso, a.npasos, b.name_ as ultima_accion, b.start_time_  AS fecha_proceso
-	from n_tareas a
-	left join act_hi_taskinst b on a.idd = b.id_
+  with n_tareas as (		
+    select proc_inst_id_ as id_proceso, count(*) as npasos, max(id_) as idd 
+    from act_hi_taskinst aht 
+    group by proc_inst_id_
+  )
+  select a.id_proceso, a.npasos, b.name_ as ultima_accion, b.start_time_  AS fecha_proceso
+  from n_tareas a
+  left join act_hi_taskinst b on a.idd = b.id_
 )
 select ht.num_tramite, 
        ac.nombre::character(100) as contrato, 

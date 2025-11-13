@@ -5,12 +5,35 @@ const cors = require('cors');
 const app = express();
 
 // Middleware para parsear JSON y CORS
-app.use(express.json());
+//app.use(express.json());
 app.use(cors({
   origin: '*',  // Permite cualquier origen (incluyendo file:// y localhost:puertos)
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Métodos permitidos
-  allowedHeaders: ['Content-Type', 'Authorization']  // Headers permitidos
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],  // Métodos permitidos
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning', 'Accept'],  // Headers permitidos
+  credentials: true
+
 }));
+
+// Middleware personalizado para headers CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, ngrok-skip-browser-warning, Accept');
+  res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+  
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
+// Middleware para manejar preflight requests
+//app.options('*', cors());
+
+// Middleware para parsear JSON
+app.use(express.json());
 
 const port = process.env.PORT || 5000;
 
@@ -25,6 +48,8 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || 'sis@pp2023'
 });
 
+
+
 // Middleware para parsear JSON
 /////http://localhost:5000/estadisticas/usuarios?fecha_desde=2025-09-01&fecha_hasta=2025-09-01
 /////////////////////////////////////////////
@@ -34,6 +59,9 @@ const pool = new Pool({
 /////////////////////////////////////////////
 
 app.get('/estadisticas/usuarios', async (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
   const { fecha_desde, fecha_hasta } = req.query;
 
   // Validar parámetros obligatorios
@@ -81,7 +109,7 @@ app.get('/estadisticas/usuarios', async (req, res) => {
     `;
 
     const client = await pool.connect();
-    console.log('Conexión a DB establecida');
+    console.log('Conexión a DB establecida  para /estadisticas/usuarios');
     try {
       const result = await client.query(query, [fechaDesde, fechaHasta]);
       res.status(200).json({
@@ -93,7 +121,7 @@ app.get('/estadisticas/usuarios', async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error('Error detallado:', error);
+    console.error('Error en /estadisticas/usuarios:',error);
     res.status(500).json({
       error: `Error en la consulta: ${error.message}`,
       stack: error.stack
@@ -200,7 +228,7 @@ app.get('/estadisticas/detalle', async (req, res) => {
     `;
 
     const client = await pool.connect();
-    console.log('Conexión a DB establecida');
+    console.log('Conexión a DB establecida para /estadisticas/detalle');
     try {
       const result = await client.query(query, [fechaDesde, fechaHasta, nombre]);
       
@@ -231,7 +259,7 @@ app.get('/estadisticas/detalle', async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error('Error detallado:', error);
+    console.error('Error en /estadisticas/detalle:', error);
     res.status(500).json({
       error: `Error en la consulta: ${error.message}`,
       stack: error.stack
@@ -283,14 +311,14 @@ app.get('/estadisticas/detalle_usuario', async (req, res) => {
       // Consulta SQL adaptada para detalles por trámite de un usuario específico
       const query = `
  with npasos as (
-  with n_tareas as (		
-    select proc_inst_id_ as id_proceso, count(*) as npasos, max(id_) as idd 
-    from act_hi_taskinst aht 
-    group by proc_inst_id_
-  )
-  select a.id_proceso, a.npasos, b.name_ as ultima_accion, b.start_time_  AS fecha_proceso
-  from n_tareas a
-  left join act_hi_taskinst b on a.idd = b.id_
+	with n_tareas as (		
+		select proc_inst_id_ as id_proceso, count(*) as npasos, max(id_) as idd 
+		from act_hi_taskinst aht 
+		group by proc_inst_id_
+	)
+	select a.id_proceso, a.npasos, b.name_ as ultima_accion, b.start_time_  AS fecha_proceso
+	from n_tareas a
+	left join act_hi_taskinst b on a.idd = b.id_
 )
 select ht.num_tramite, 
        ac.nombre::character(100) as contrato, 
@@ -320,7 +348,7 @@ where liq.fecha_ingreso >= $1
   and us.usuario = $4
 `; 
 const client = await pool.connect();
-console.log('Conexión a DB establecida'); 
+console.log('Conexión a DB establecida para /estadisticas/detalle_usuario'); 
 try {
    const result = await client.query(query, [fechaDesde, fechaHasta, nombre, usuario]);
     // Calcular eficiencia y eficacia
@@ -349,7 +377,7 @@ const processedRows = result.rows.map(row => {
          client.release();
          }
         } catch (error) {
-           console.error('Error detallado:', error);
+           console.error('Error en /estadisticas/detalle_usuario:', error);
             res.status(500).json({
                error: `Error en la consulta: ${error.message}`,
                 stack: error.stack 
@@ -384,7 +412,7 @@ app.get('/estadisticas/detalle_tramite', async (req, res) => {
 
   try {
     const client = await pool.connect();
-    console.log('Conexión a DB establecida');
+    console.log('Conexión a DB establecida para /estadisticas/detalle_tramite');
 
     try {
       // Primera consulta: Eventos
@@ -442,7 +470,7 @@ app.get('/estadisticas/detalle_tramite', async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error('Error detallado:', error);
+    console.error('Error en /estadisticas/detalle_tramite:', error);
     res.status(500).json({
       error: `Error en la consulta: ${error.message}`,
       stack: error.stack
@@ -451,14 +479,21 @@ app.get('/estadisticas/detalle_tramite', async (req, res) => {
 });
 
 
-  // Endpoint raíz
-  app.get('/', (req, res) => {
-    res.json({
-      mensaje: 'API de Estadísticas de Usuarios - Usa /estadisticas/usuarios o /estadisticas/detalle?fecha_desde=...&fecha_hasta=...&nombre=... o /estadisticas/detalle_usuario?fecha_desde=...&fecha_hasta=...&nombre=...=...&usuario=...'
-    });
+// Endpoint raíz
+app.get('/', (req, res) => {
+  res.json({
+    mensaje: 'API de Estadísticas de Usuarios - CORS Configurado',
+    endpoints: {
+      usuarios: '/estadisticas/usuarios?fecha_desde=YYYY-MM-DD&fecha_hasta=YYYY-MM-DD',
+      detalle: '/estadisticas/detalle?fecha_desde=YYYY-MM-DD&fecha_hasta=YYYY-MM-DD&nombre=rol',
+      detalle_usuario: '/estadisticas/detalle_usuario?fecha_desde=YYYY-MM-DD&fecha_hasta=YYYY-MM-DD&nombre=rol&usuario=username',
+      detalle_tramite: '/estadisticas/detalle_tramite?num_tramite=XXXX'
+    }
   });
+});
 
 // Iniciar servidor
 app.listen(port, () => {
   console.log(`Servidor corriendo en http://192.188.2.240:${port}`);
+  console.log(`✅ CORS configurado para todos los dominios`);
 });

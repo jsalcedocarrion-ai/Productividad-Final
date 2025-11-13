@@ -1,3 +1,6 @@
+//const baseURL = 'https://undealt-hystricomorphic-velma.ngrok-free.dev';
+const baseURL = 'http://localhost:5000';
+
 let fechaDesde = '';
 let fechaHasta = '';
 let currentRol = '';
@@ -9,7 +12,10 @@ let eficaciaChart = null;
 // Variables globales para paginación
 let currentPage = 1;
 const tramitesPorPagina = 5;
-let allTramitesRows = [];
+//let allTramitesRows = [];
+//let originalTramitesRows = [];
+//let sortColumn = null;
+//let sortAscending = true;
 
 function showStep(step) {
   document.querySelectorAll('.step-container').forEach(el => el.classList.remove('step-active'));
@@ -35,40 +41,79 @@ function backToStep4() {
 function loadRoles() {
   fechaDesde = document.getElementById('fechaDesde').value;
   fechaHasta = document.getElementById('fechaHasta').value;
-
+  
+  console.log('📅 Fechas seleccionadas:', fechaDesde, fechaHasta);
+  
   if (!fechaDesde || !fechaHasta) {
-    const today = new Date();
-    fechaHasta = today.toISOString().split('T')[0];
-    const lastMonth = new Date(today);
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    fechaDesde = lastMonth.toISOString().split('T')[0];
+    alert('Por favor selecciona ambas fechas');
+    return;
   }
+const url = `${baseURL}/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
+  
+  console.log('🔗 Consultando URL:', url);
+  
+  document.getElementById('rolesTable').innerHTML = '<div class="loading">🔄 Cargando datos...</div>';
 
-  showStep(2);
-  document.getElementById('rolesTable').innerHTML = '<div class="loading"><div class="spinner-border"></div> Cargando roles...</div>';
-
-  const url = `http://localhost:5000/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
   fetch(url)
-    .then(res => res.json())
+    .then(response => {
+      console.log('📡 Status:', response.status);
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      return response.json();
+    })
     .then(data => {
+      console.log('✅ Datos recibidos:', data);
       if (data.success) {
+        showStep(2);
         populateRolesTable(data.data);
       } else {
-        document.getElementById('rolesTable').innerHTML = '<p class="error-msg">Error al cargar roles.</p>';
+        document.getElementById('rolesTable').innerHTML = 
+          '<p class="error-msg">Error: ' + (data.error || 'Desconocido') + '</p>';
       }
     })
-    .catch(err => {
-      document.getElementById('rolesTable').innerHTML = '<p class="error-msg">Error de conexión.</p>';
+    .catch(err => {  // ⚠️ AQUÍ ESTÁ LA VARIABLE 'error'
+      console.error('❌ Error:', err);  // ⚠️ Y AQUÍ TAMBIÉN
+      document.getElementById('rolesTable').innerHTML = 
+        '<p class="error-msg">Error: ' + err.message + '<br><br>' +
+        '<strong>Soluciones:</strong><br>' +
+        '1. Verifica que "node api-rest.js" esté ejecutándose<br>' +
+        '2. Verifica que "ngrok http 5000" esté ejecutándose<br>' +
+        '3. Revisa la consola para más detalles</p>';
     });
 }
 
-function populateRolesTable(rows) {
-  let table = '<table class="table table-striped"><thead><tr><th>Rol</th><th>Usuarios</th><th>Trámites</th><th>Peso Trámites</th></tr></thead><tbody>';
-  rows.forEach(row => {
-    table += `<tr style="cursor: pointer;" onclick="loadUsers('${row.rol_nombre}')"><td>${row.rol_usuario_titulo}</td><td>${row.usuarios}</td><td>${row.cantidad_tramites}</td><td>${row.peso_tramites}</td></tr>`;
-  });
-  table += '</tbody></table>';
-  document.getElementById('rolesTable').innerHTML = table;
+function populateRolesTable(data) {
+    if (!data || data.length === 0) {
+        document.getElementById('rolesTable').innerHTML = '<p>No hay datos para mostrar</p>';
+        return;
+    }
+
+    const tableHTML = `
+        <h3>Resultados (${data.length} roles)</h3>
+        <table border="1" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f0f0f0;">
+                    <th style="padding: 10px; text-align: left;">Rol</th>
+                    <th style="padding: 10px; text-align: left;">Usuarios</th>
+                    <th style="padding: 10px; text-align: left;">Trámites</th>
+                    <th style="padding: 10px; text-align: left;">Peso Trámites</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.map(item => `
+                     <tr style="cursor: pointer;" onclick="loadUsers('${item.rol_nombre || item.rol_usuario_titulo}')">
+                        <td style="padding: 8px;">${item.rol_usuario_titulo || 'N/A'}</td>
+                        <td style="padding: 8px;">${item.usuarios || 0}</td>
+                        <td style="padding: 8px;">${item.cantidad_tramites || 0}</td>
+                        <td style="padding: 8px;">${item.peso_tramites || 0}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+    
+    document.getElementById('rolesTable').innerHTML = tableHTML;
 }
 
 function loadUsers(rolNombre) {
@@ -82,7 +127,9 @@ function loadUsers(rolNombre) {
   tramitesChart = null;
   eficaciaChart = null;
 
-  const url = `http://localhost:5000/estadisticas/detalle?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${rolNombre}`;
+  const url = `${baseURL}/estadisticas/detalle?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${rolNombre}`;
+  //const url = `https://undealt-hystricomorphic-velma.ngrok-free.dev/estadisticas/detalle?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${rolNombre}`;
+
   fetch(url)
     .then(res => res.json())
     .then(data => {
@@ -374,8 +421,9 @@ function loadTramites(usuario) {
   sortColumn = null;
   sortAscending = true;
 
-  const url = `http://localhost:5000/estadisticas/detalle_usuario?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${currentRol}&usuario=${usuario}`;
-  
+    const url = `${baseURL}/estadisticas/detalle_usuario?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${currentRol}&usuario=${usuario}`;
+    //const url = `https://undealt-hystricomorphic-velma.ngrok-free.dev/estadisticas/detalle_usuario?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${currentRol}&usuario=${usuario}`;
+
   fetch(url)
     .then(res => res.json())
     .then(data => {
@@ -400,9 +448,9 @@ function populateTramitesTable(rows) {
   renderTramitesTable();
 }
 
-let sortColumn = null;
-let sortAscending = true;
-let originalTramitesRows = [];
+//let sortColumn = null;
+//let sortAscending = true;
+//let originalTramitesRows = [];
 
 function renderTramitesTable() {
   const startIndex = (currentPage - 1) * tramitesPorPagina;
@@ -490,8 +538,8 @@ function loadDetalleTramite(numTramite, pagina = 1) {
   console.log('Iniciando carga de detalles para trámite:', numTramite);
   document.getElementById('eventosTable').innerHTML = '<div class="loading"><div class="spinner-border"></div> Cargando eventos...</div>';
   document.getElementById('cambiosTable').innerHTML = '<div class="loading"><div class="spinner-border"></div> Cargando cambios...</div>';
-  const url = `http://localhost:5000/estadisticas/detalle_tramite?num_tramite=${numTramite}`;
-
+  const url = `${baseURL}/estadisticas/detalle_tramite?num_tramite=${numTramite}`;
+  //const url = `https://undealt-hystricomorphic-velma.ngrok-free.dev/estadisticas/detalle_tramite?num_tramite=${numTramite}`;
   const timeoutPromise = new Promise((_, reject) => 
     setTimeout(() => reject(new Error('Timeout excedido')), 10000)
   );

@@ -1,5 +1,5 @@
-const baseURL = 'https://undealt-hystricomorphic-velma.ngrok-free.dev';
-//const baseURL = 'http://localhost:5000';
+//const baseURL = 'https://undealt-hystricomorphic-velma.ngrok-free.dev';
+const baseURL = 'http://localhost:5000';
 
 let fechaDesde = '';
 let fechaHasta = '';
@@ -72,14 +72,9 @@ const url = `${baseURL}/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_ha
           '<p class="error-msg">Error: ' + (data.error || 'Desconocido') + '</p>';
       }
     })
-    .catch(err => {  // ⚠️ AQUÍ ESTÁ LA VARIABLE 'error'
-      console.error('❌ Error:', err);  // ⚠️ Y AQUÍ TAMBIÉN
+        .catch(error => {
       document.getElementById('rolesTable').innerHTML = 
-        '<p class="error-msg">Error: ' + err.message + '<br><br>' +
-        '<strong>Soluciones:</strong><br>' +
-        '1. Verifica que "node api-rest.js" esté ejecutándose<br>' +
-        '2. Verifica que "ngrok http 5000" esté ejecutándose<br>' +
-        '3. Revisa la consola para más detalles</p>';
+        '<p class="error-msg">Error de conexión: ' + error.message + '</p>';
     });
 }
 

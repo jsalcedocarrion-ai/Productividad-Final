@@ -4,30 +4,62 @@ const cors = require('cors');
 
 const app = express();
 
-// Middleware para parsear JSON y CORS
-//app.use(express.json());
-app.use(cors({
-  origin: '*',  // Permite cualquier origen (incluyendo file:// y localhost:puertos)
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],  // Métodos permitidos
-  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning', 'Accept'],  // Headers permitidos
-  credentials: true
+// Lista de orígenes permitidos
+const allowedOrigins = [
+  'http://localhost:5000',
+  'https://productividad-final-waeq.vercel.app', // Reemplaza con tu dominio de Vercel
+  'file://',
+  'null',
+  'https://*.ngrok.io',
+  'https://*.ngrok-free.app'
+];
 
+// Middleware para parsear JSON y CORS
+// Configuración mejorada de CORS
+app.use(cors({
+  origin: function (origin, callback) {
+    // Permitir requests sin origen (como mobile apps o curl)
+    if (!origin) return callback(null, true);
+  
+
+  
+  const isAllowed =
+  allowedOrigins.includes(origin) ||
+  (origin && origin.includes('ngrok') && allowedOrigins.some(o => o.includes('*')));
+      if (isAllowed){
+      return callback(null, true);
+    } else {
+      console.log('Origen bloqueado por CORS:', origin);
+      return callback(new Error('Not allowed by CORS'), false);
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning', 'Accept', 'Origin', 'X-Requested-With'],
+  credentials: true,
 }));
 
-// Middleware personalizado para headers CORS
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, ngrok-skip-browser-warning, Accept');
-  res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+// Middleware para headers adicionales
+//app.use((req, res, next) => {
+  //const origin = req.headers.origin;
   
+  // Verificar si el origen está en la lista permitida
+  //if (allowedOrigins.some(allowedOrigin => 
+      //origin === allowedOrigin || 
+      //(allowedOrigin.includes('*') && origin && origin.includes('ngrok')))) {
+    //res.header('Access-Control-Allow-Origin', origin);
+  //}
   
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  //res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  //res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, ngrok-skip-browser-warning, Accept, Origin, X-Requested-With');
+  //res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
+  //res.header('Access-Control-Allow-Credentials', 'true');
   
-  next();
-});
+  //if (req.method === 'OPTIONS') {
+    //return res.status(200).end();
+  //}
+  
+  //next();
+//});
 
 // Middleware para manejar preflight requests
 //app.options('*', cors());
@@ -59,7 +91,7 @@ const pool = new Pool({
 /////////////////////////////////////////////
 
 app.get('/estadisticas/usuarios', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Origin', req.headers.origin);
   res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
   const { fecha_desde, fecha_hasta } = req.query;

@@ -1,5 +1,5 @@
-const baseURL = 'https://undealt-hystricomorphic-velma.ngrok-free.dev';
-//const baseURL = 'http://localhost:5000';
+//const baseURL = 'https://undealt-hystricomorphic-velma.ngrok-free.dev';
+const baseURL = 'http://localhost:5000';
 
 let fechaDesde = '';
 let fechaHasta = '';

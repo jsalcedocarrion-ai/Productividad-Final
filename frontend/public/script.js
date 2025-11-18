@@ -49,6 +49,7 @@ function loadRoles() {
     return;
   }
 const url = `${baseURL}/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
+//const url = `https://undealt-hystricomorphic-velma.ngrok-free.dev/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
   
   console.log('🔗 Consultando URL:', url);
   

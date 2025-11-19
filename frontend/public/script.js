@@ -1,21 +1,21 @@
-//const baseURL = 'https://undealt-hystricomorphic-velma.ngrok-free.dev';
-const baseURL = 'http://localhost:5000';
+// ✅ URL correcta de ngrok
+const baseURL = 'https://undealt-hystricomorphic-velma.ngrok-free.dev';
 
 let fechaDesde = '';
 let fechaHasta = '';
 let currentRol = '';
 let currentUsuario = '';
-let usersData = []; // Almacena datos de usuarios para gráficos
+let usersData = [];
 let tramitesChart = null;
 let eficaciaChart = null;
 
-// Variables globales para paginación
+// ✅ Variables globales CORREGIDAS (no comentadas)
 let currentPage = 1;
 const tramitesPorPagina = 5;
 let allTramitesRows = [];
-//let originalTramitesRows = [];
-//let sortColumn = null;
-//let sortAscending = true;
+let originalTramitesRows = []; // ✅ DECLARADA
+let sortColumn = null; // ✅ DECLARADA
+let sortAscending = true; // ✅ DECLARADA
 
 function showStep(step) {
   document.querySelectorAll('.step-container').forEach(el => el.classList.remove('step-active'));
@@ -38,6 +38,7 @@ function backToStep4() {
   showStep(4);
 }
 
+// ✅ Función fetch mejorada con headers para ngrok
 function loadRoles() {
   fechaDesde = document.getElementById('fechaDesde').value;
   fechaHasta = document.getElementById('fechaHasta').value;
@@ -48,18 +49,24 @@ function loadRoles() {
     alert('Por favor selecciona ambas fechas');
     return;
   }
-const url = `${baseURL}/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
-//const url = `https://undealt-hystricomorphic-velma.ngrok-free.dev/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
+
+  const url = `${baseURL}/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
   
   console.log('🔗 Consultando URL:', url);
   
   document.getElementById('rolesTable').innerHTML = '<div class="loading">🔄 Cargando datos...</div>';
 
-  fetch(url)
+  // ✅ Headers para ngrok
+  fetch(url, {
+    headers: {
+      'ngrok-skip-browser-warning': 'true',
+      'Content-Type': 'application/json'
+    }
+  })
     .then(response => {
       console.log('📡 Status:', response.status);
       if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
+      throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
       }
       return response.json();
     })
@@ -73,7 +80,8 @@ const url = `${baseURL}/estadisticas/usuarios?fecha_desde=${fechaDesde}&fecha_ha
           '<p class="error-msg">Error: ' + (data.error || 'Desconocido') + '</p>';
       }
     })
-        .catch(error => {
+    .catch(error => {
+      console.error('❌ Error de conexión:', error);
       document.getElementById('rolesTable').innerHTML = 
         '<p class="error-msg">Error de conexión: ' + error.message + '</p>';
     });
@@ -112,6 +120,7 @@ function populateRolesTable(data) {
     document.getElementById('rolesTable').innerHTML = tableHTML;
 }
 
+// ✅ Función loadUsers con headers
 function loadUsers(rolNombre) {
   currentRol = rolNombre;
   document.getElementById('currentRol').innerHTML = rolNombre;
@@ -124,20 +133,35 @@ function loadUsers(rolNombre) {
   eficaciaChart = null;
 
   const url = `${baseURL}/estadisticas/detalle?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${rolNombre}`;
-  //const url = `https://undealt-hystricomorphic-velma.ngrok-free.dev/estadisticas/detalle?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${rolNombre}`;
-
-  fetch(url)
-    .then(res => res.json())
+  
+  // ✅ Headers para ngrok
+  fetch(url, {
+    headers: {
+      'ngrok-skip-browser-warning': 'true',
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    console.log('📡 Response status:', response.status, response.statusText);
+    if (!response.ok) {
+    throw new Error(`Error HTTPS: ${response.status} - ${response.statusText}- ${errData.error || 'Error desconocido'}`);
+    }
+    return response.json();
+  })
     .then(data => {
+      console.log('Datos de usuarios:', data);
       if (data.success) {
         usersData = data.data;
         populateUsersTable(data.data, 10);
       } else {
-        document.getElementById('usersTable').innerHTML = '<p class="error-msg">Error al cargar usuarios.</p>';
+        document.getElementById('usersTable').innerHTML = 
+        '<p class="error-msg">Error al cargar usuarios.</p>';
       }
     })
-    .catch(err => {
-      document.getElementById('usersTable').innerHTML = '<p class="error-msg">Error de conexión.</p>';
+    .catch(error => {
+      console.error('❌ Error de conexión:', error);
+      document.getElementById('usersTable').innerHTML =
+       '<p class="error-msg">Error de conexión: ' + error.message + '</p>';
     });
 }
 
@@ -147,7 +171,7 @@ function populateUsersTable(rows, maxItems = 10) {
     .sort((a, b) => parseFloat(b.tramites) - parseFloat(a.tramites))
     .slice(0, maxItems);
     
-  rows.forEach(row => {
+  limitedRows.forEach(row => {
     table += `<tr style="cursor: pointer;" onclick="loadTramites('${row.usuario}')"><td>${row.nombre_usuario}</td><td>${row.dias_lab}</td><td>${row.ntram}</td><td>${row.tramites}</td><td>${row.peso}</td><td>${row.no_terminado}</td><td>${row.eficiencia}%</td><td>${row.fuera}</td><td>${row.eficacia}%</td></tr>`;
   });
   table += '</tbody></table>';
@@ -208,16 +232,13 @@ function drawTramitesChart() {
               maxRotation: 0,
               minRotation: 0,
               padding: 20,
-              // 🔹 FUNCIÓN SIMPLE MULTILÍNEA
               callback: function(value, index, values) {
                 const name = fullNames[index];
                 if (!name) return '';
                 
-                // Dividir en dos líneas aproximadamente por la mitad
                 const mid = Math.ceil(name.length / 2);
-                
-                // Buscar un espacio cerca del punto medio para dividir naturalmente
                 let splitIndex = mid;
+                
                 for (let i = 0; i < 5; i++) {
                   if (name[mid + i] === ' ') {
                     splitIndex = mid + i;
@@ -236,7 +257,7 @@ function drawTramitesChart() {
               }
             },
             afterFit: function(scale) {
-              scale.width = 250; // Espacio suficiente para dos líneas
+              scale.width = 250;
             }
           }
         },
@@ -248,66 +269,12 @@ function drawTramitesChart() {
                 return context.parsed.x + ' trámites';
               }
             }
-          },
-          datalabels: {
-            anchor: 'end',
-            align: 'end',
-            formatter: function(value) {
-              return value;
-            },
-            color: '#000',
-            font: { weight: 'bold', size: 10 }
           }
         }
-      },
-      plugins: [ChartDataLabels]
+      }
     });
   }
 }
-
-// 🔹 FUNCIÓN PARA DIVIDIR TEXTO EN DOS LÍNEAS
-function splitNameIntoTwoLines(name, maxCharsPerLine) {
-  if (!name || name.length <= maxCharsPerLine) {
-    return name;
-  }
-  
-  const words = name.split(' ');
-  let line1 = '';
-  let line2 = '';
-  
-  // Primera línea: hasta la mitad aproximada del texto
-  const midPoint = Math.floor(name.length / 2);
-  let currentLength = 0;
-  
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    if (currentLength + word.length <= midPoint) {
-      line1 += (line1 ? ' ' : '') + word;
-      currentLength += word.length + 1;
-    } else {
-      // El resto va a la segunda línea
-      line2 = words.slice(i).join(' ');
-      break;
-    }
-  }
-  
-  // Si no se dividió, dividir por la mitad
-  if (!line2) {
-    line1 = name.substring(0, midPoint).trim();
-    line2 = name.substring(midPoint).trim();
-  }
-  
-  // Acortar si es necesario
-  if (line1.length > maxCharsPerLine) {
-    line1 = line1.substring(0, maxCharsPerLine - 3) + '...';
-  }
-  if (line2.length > maxCharsPerLine) {
-    line2 = line2.substring(0, maxCharsPerLine - 3) + '...';
-  }
-  
-  return [line1, line2];
-}
-
 
 function drawEficaciaChart() {
   if (eficaciaChart) eficaciaChart.destroy();
@@ -389,24 +356,14 @@ function drawEficaciaChart() {
                 return context.parsed.x + '%';
               }
             }
-          },
-          datalabels: {
-            anchor: 'end',
-            align: 'end',
-            formatter: function(value) {
-              return value + '%';
-            },
-            color: '#000',
-            font: { weight: 'bold', size: 10 }
           }
         }
-      },
-      plugins: [ChartDataLabels]
+      }
     });
   }
 }
 
-
+// ✅ Función loadTramites con headers
 function loadTramites(usuario) {
   currentUsuario = usuario;
   document.getElementById('currentUsuario').innerHTML = usuario;
@@ -417,15 +374,20 @@ function loadTramites(usuario) {
   sortColumn = null;
   sortAscending = true;
 
-    const url = `${baseURL}/estadisticas/detalle_usuario?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${currentRol}&usuario=${usuario}`;
-    //const url = `https://undealt-hystricomorphic-velma.ngrok-free.dev/estadisticas/detalle_usuario?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${currentRol}&usuario=${usuario}`;
+  const url = `${baseURL}/estadisticas/detalle_usuario?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&nombre=${currentRol}&usuario=${usuario}`;
 
-  fetch(url)
+  // ✅ Headers para ngrok
+  fetch(url, {
+    headers: {
+      'ngrok-skip-browser-warning': 'true',
+      'Content-Type': 'application/json'
+    }
+  })
     .then(res => res.json())
     .then(data => {
       if (data.success && data.data) {
         allTramitesRows = data.data;
-        originalTramitesRows = [...data.data]; // ✅ INICIALIZAR AQUÍ
+        originalTramitesRows = [...data.data];
         populateTramitesTable(data.data);
         renderTramitesTable();
       } else {
@@ -433,7 +395,7 @@ function loadTramites(usuario) {
       }
     })
     .catch(err => {
-      console.error('Error:', err);
+      console.error('❌ Error loadTramites:', err);
       document.getElementById('tramitesTable').innerHTML = '<p class="error-msg">Error de conexión al obtener detalle del usuario.</p>';
     });
 }
@@ -443,10 +405,6 @@ function populateTramitesTable(rows) {
   currentPage = 1;
   renderTramitesTable();
 }
-
-//let sortColumn = null;
-//let sortAscending = true;
-//let originalTramitesRows = [];
 
 function renderTramitesTable() {
   const startIndex = (currentPage - 1) * tramitesPorPagina;
@@ -465,7 +423,7 @@ function renderTramitesTable() {
   table += '</tr></thead><tbody>';
 
   if (pageRows.length === 0) {
-    table += '<tr><td colspan="5" class="text-center">No hay trámites para mostrar</td></tr>';
+    table += '<tr><td colspan="8" class="text-center">No hay trámites para mostrar</td></tr>';
   } else {
     pageRows.forEach(row => {
       table += `<tr style="cursor: pointer;" onclick="loadDetalleTramite('${row.num_tramite}')">
@@ -497,7 +455,6 @@ function renderTramitesPagination() {
   }
   
   let buttons = '';
-   //Boton anterior
   if (currentPage > 1) {
     buttons += `<button class="btn btn-sm btn-outline-secondary mx-1" onclick="goToTramitesPage(${currentPage - 1})">← Anterior</button>`;
   }
@@ -505,14 +462,10 @@ function renderTramitesPagination() {
   const startPage = Math.max(1, currentPage - 2);
   const endPage = Math.min(totalPages, currentPage + 2);
   
-
-  //Boton numeros
   for (let i = startPage; i <= endPage; i++) {
     buttons += `<button class="btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-outline-primary'} mx-1" onclick="goToTramitesPage(${i})">${i}</button>`;
   }
   
-
-  //Boton siguiente
   if (currentPage < totalPages) {
     buttons += `<button class="btn btn-sm btn-outline-secondary mx-1" onclick="goToTramitesPage(${currentPage + 1})">Siguiente →</button>`;
   }
@@ -527,6 +480,7 @@ function goToTramitesPage(page) {
   renderTramitesTable();
 }
 
+// ✅ Función loadDetalleTramite con headers
 function loadDetalleTramite(numTramite, pagina = 1) {
   document.getElementById('currentTramite').innerHTML = numTramite;
   showStep(5);
@@ -534,14 +488,20 @@ function loadDetalleTramite(numTramite, pagina = 1) {
   console.log('Iniciando carga de detalles para trámite:', numTramite);
   document.getElementById('eventosTable').innerHTML = '<div class="loading"><div class="spinner-border"></div> Cargando eventos...</div>';
   document.getElementById('cambiosTable').innerHTML = '<div class="loading"><div class="spinner-border"></div> Cargando cambios...</div>';
+  
   const url = `${baseURL}/estadisticas/detalle_tramite?num_tramite=${numTramite}`;
-  //const url = `https://undealt-hystricomorphic-velma.ngrok-free.dev/estadisticas/detalle_tramite?num_tramite=${numTramite}`;
+  
   const timeoutPromise = new Promise((_, reject) => 
     setTimeout(() => reject(new Error('Timeout excedido')), 10000)
   );
 
   Promise.race([
-    fetch(url),
+    fetch(url, {
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+      }
+    }),
     timeoutPromise
   ])
   .then(res => res.json())
@@ -551,19 +511,17 @@ function loadDetalleTramite(numTramite, pagina = 1) {
       const eventos = (data.data && data.data.eventos) || data.eventos || [];
       const cambios = (data.data && data.data.cambios) || data.cambios || [];
       console.log('Eventos:', eventos.length, 'Cambios:', cambios.length);
-      Promise.all([
-        populateEventosTable(data.data.eventos),
-        populateCambiosTable(data.data.cambios)
-      ]).then(() => {
-        console.log('Ambas tablas cargadas correctamente');
-        //new bootstrap.Tab(document.querySelector('cambios-tab')).show(); // Ensure Cambios tab is active
-      });
+      
+      populateEventosTable(eventos);
+      populateCambiosTable(cambios);
+      
+      console.log('Ambas tablas cargadas correctamente');
     } else {
       showError('Error al cargar datos del trámite');
     }
   })
   .catch(err => {
-    console.error('Error:', err);
+    console.error('❌ Error loadDetalleTramite:', err);
     showError(err.message.includes('Timeout') ? 
       'La consulta está tomando demasiado tiempo. Intente con menos datos.' : 
       'Error de conexión'
@@ -636,37 +594,29 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-
-
 function filterTramites() {
   const filterValue = document.getElementById('tramiteFilter').value.trim().toLowerCase();
   if (filterValue === '') {
-    //renderTramitesTable();
-    allTramitesRows = [...allTramitesRows];
-
+    allTramitesRows = [...originalTramitesRows];
   } else {
     const filteredRows = allTramitesRows.filter(row => 
       row.num_tramite && row.num_tramite.toString().toLowerCase().includes(filterValue)
     );
     allTramitesRows = filteredRows;
   }
-    //renderTramitesTable();
   currentPage = 1;
   renderTramitesTable();
-  }
-
+}
 
 function filterNombre() {
   const filterValue = document.getElementById('tramiteFilter').value.trim().toLowerCase();
   if (filterValue === '') {
-    allTramitesRows = [...allTramitesRows];
-    //renderTramitesTable();
+    allTramitesRows = [...originalTramitesRows];
   } else {
     const filteredRows = allTramitesRows.filter(row => 
       row.nombre && row.nombre.toString().toLowerCase().includes(filterValue)
     );
     allTramitesRows = filteredRows;
-    //renderTramitesTable();
   }
   currentPage = 1;
   renderTramitesTable();
@@ -674,20 +624,9 @@ function filterNombre() {
 
 function clearFilter() {
   document.getElementById('tramiteFilter').value = '';
-
   allTramitesRows = [...originalTramitesRows];
-
   currentPage = 1;
   
-  // Restaurar los datos originales
-  if (originalTramitesRows && originalTramitesRows.length > 0) {
-    allTramitesRows = [...originalTramitesRows];
-  }
-  
-  // Restablecer paginación
-  currentPage = 1;
-  
-  // Si había una columna ordenada, re-aplicar el orden
   if (sortColumn) {
     sortByDate(sortColumn);
   } else {

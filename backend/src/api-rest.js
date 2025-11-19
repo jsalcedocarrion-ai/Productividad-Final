@@ -3,75 +3,20 @@ const { Pool } = require('pg');
 const cors = require('cors');
 
 const app = express();
-
-// Lista de orígenes permitidos
-const allowedOrigins = [
-  'http://localhost:5000',
-  'https://productividad-final-waeq.vercel.app', // Reemplaza con tu dominio de Vercel
-  'file://',
-  'null',
-  'https://*.ngrok.io',
-  'https://*.ngrok-free.app'
-];
-
-// Middleware para parsear JSON y CORS
-// Configuración mejorada de CORS
-app.use(cors({
-  origin: function (origin, callback) {
-    // Permitir requests sin origen (como mobile apps o curl)
-    if (!origin) return callback(null, true);
-  
-
-  
-  const isAllowed =
-  allowedOrigins.includes(origin) ||
-  (origin && origin.includes('ngrok') && allowedOrigins.some(o => o.includes('*')));
-      if (isAllowed){
-      return callback(null, true);
-    } else {
-      console.log('Origen bloqueado por CORS:', origin);
-      return callback(new Error('Not allowed by CORS'), false);
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning', 'Accept', 'Origin', 'X-Requested-With'],
-  credentials: true,
-}));
-
-// Middleware para headers adicionales
-//app.use((req, res, next) => {
-  //const origin = req.headers.origin;
-  
-  // Verificar si el origen está en la lista permitida
-  //if (allowedOrigins.some(allowedOrigin => 
-      //origin === allowedOrigin || 
-      //(allowedOrigin.includes('*') && origin && origin.includes('ngrok')))) {
-    //res.header('Access-Control-Allow-Origin', origin);
-  //}
-  
-  //res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  //res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, ngrok-skip-browser-warning, Accept, Origin, X-Requested-With');
-  //res.header('Access-Control-Expose-Headers', 'Content-Type, Authorization');
-  //res.header('Access-Control-Allow-Credentials', 'true');
-  
-  //if (req.method === 'OPTIONS') {
-    //return res.status(200).end();
-  //}
-  
-  //next();
-//});
-
-// Middleware para manejar preflight requests
-//app.options('*', cors());
-
-// Middleware para parsear JSON
-app.use(express.json());
-
 const port = process.env.PORT || 5000;
 
+// ✅ CONFIGURACIÓN BÁSICA PRIMERO
+app.use(cors());
+app.use(express.json());
 
+// ✅ MIDDLEWARE DE LOGS PARA DEBUG
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  console.log('Query params:', req.query);
+  next();
+});
 
-// Configuración de la base de datos (ajusta según tu entorno)
+// Configuración de la base de datos
 const pool = new Pool({
   host: process.env.DB_HOST || '192.188.57.61',
   port: process.env.DB_PORT || 5432,
@@ -80,83 +25,60 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || 'sis@pp2023'
 });
 
-
-
-// Middleware para parsear JSON
-/////http://localhost:5000/estadisticas/usuarios?fecha_desde=2025-09-01&fecha_hasta=2025-09-01
-/////////////////////////////////////////////
-/////////////////////////////////////////////
-// Endpoint: GET /estadisticas/usuarios?fecha_desde=YYYY-MM-DD&fecha_hasta=YYYY-MM-DD
-/////////////////////////////////////////////
-/////////////////////////////////////////////
-
+// ✅ ENDPOINT SIMPLIFICADO Y CORREGIDO
 app.get('/estadisticas/usuarios', async (req, res) => {
-    //res.header('Access-Control-Allow-Origin', req.headers.origin);
-  //res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  //res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  console.log('✅ Endpoint /estadisticas/usuarios accedido');
+  
   const { fecha_desde, fecha_hasta } = req.query;
 
-  // Validar parámetros obligatorios
+  // Validación básica
   if (!fecha_desde || !fecha_hasta) {
     return res.status(400).json({
-      error: 'Parámetros "fecha_desde" y "fecha_hasta" son obligatorios (formato YYYY-MM-DD)'
+      success: false,
+      error: 'Fechas requeridas'
     });
   }
 
-  // Validar formato de fechas
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dateRegex.test(fecha_desde) || !dateRegex.test(fecha_hasta)) {
-    return res.status(400).json({
-      error: 'Formato de fecha inválido. Usa YYYY-MM-DD'
-    });
-  }
-
-  // Parsear fechas y ajustar fecha_hasta
   try {
-    const fechaDesde = new Date(`${fecha_desde}T00:00:00-05:00`);
-    let fechaHasta = new Date(`${fecha_hasta}T00:00:00-05:00`);
-    fechaHasta.setDate(fechaHasta.getDate() + 1);
-
-    if (isNaN(fechaDesde) || isNaN(fechaHasta)) {
-      return res.status(400).json({
-        error: 'Fechas inválidas. Usa YYYY-MM-DD'
-      });
-    }
-
+    console.log('📅 Consultando con fechas:', fecha_desde, fecha_hasta);
+    
+    // Query simplificada para prueba
     const query = `
       SELECT 
-        UPPER(ro.nombre)::CHARACTER(100) AS rol_usuario_titulo, 
-        COUNT(DISTINCT us.id)::NUMERIC AS usuarios, 
-        COUNT(rl.id)::NUMERIC AS cantidad_tramites, 
-        SUM(rl.peso_tramite)::NUMERIC AS peso_tramites, 
-        ro.id AS rol_id, 
-        ro.nombre AS rol_nombre
+        UPPER(ro.nombre) AS rol_usuario_titulo, 
+        COUNT(DISTINCT us.id) AS usuarios, 
+        COUNT(rl.id) AS cantidad_tramites, 
+        SUM(rl.peso_tramite) AS peso_tramites
       FROM flow.regp_liquidacion rl
       LEFT JOIN app.acl_user us ON us.id = rl.inscriptor 
       LEFT JOIN conf.tar_usuario_tareas ut ON ut.usuario = us.id
       LEFT JOIN app.acl_rol ro ON ro.id = ut.rol
-      WHERE rl.fecha_ingreso >= $1  AND rl.fecha_ingreso < $2 
-      GROUP BY ro.nombre, ro.id 
+      WHERE rl.fecha_ingreso >= $1 AND rl.fecha_ingreso < $2 
+      GROUP BY ro.nombre
       ORDER BY rol_usuario_titulo
+      LIMIT 10
     `;
 
+    const fechaDesde = new Date(fecha_desde);
+    let fechaHasta = new Date(fecha_hasta);
+    fechaHasta.setDate(fechaHasta.getDate() + 1);
+
     const client = await pool.connect();
-    console.log('Conexión a DB establecida  para /estadisticas/usuarios');
-    try {
-      const result = await client.query(query, [fechaDesde, fechaHasta]);
-      res.status(200).json({
-        success: true,
-        data: result.rows,
-        total_registros: result.rowCount
-      });
-    } finally {
-      client.release();
-    }
+    const result = await client.query(query, [fechaDesde, fechaHasta]);
+    client.release();
+
+    console.log(`✅ Consulta exitosa: ${result.rows.length} registros`);
+
+    res.json({
+      success: true,
+      data: result.rows,
+      total_registros: result.rowCount
+    });
   } catch (error) {
-    console.error('Error en /estadisticas/usuarios:',error);
+    console.error('❌ Error en la consulta:', error);
     res.status(500).json({
-      error: `Error en la consulta: ${error.message}`,
-      stack: error.stack
+      success: false,
+      error: error.message
     });
   }
 });
@@ -170,16 +92,18 @@ app.get('/estadisticas/usuarios', async (req, res) => {
 /////////////////////////////////////////////
 
 app.get('/estadisticas/detalle', async (req, res) => {
+    console.log('✅ Endpoint /estadisticas/detalle');
   const { fecha_desde, fecha_hasta, nombre } = req.query;
-
+  const nombreLower = nombre.toLowerCase();
   // Validar parámetros obligatorios
   if (!fecha_desde || !fecha_hasta || !nombre) {
     return res.status(400).json({
+      success: false,
       error: 'Parámetros "fecha_desde", "fecha_hasta" y "nombre" son obligatorios (fecha: YYYY-MM-DD, nombre: texto)'
     });
   }
 
-  // Validar formato de fechas
+// Validar formato de fechas
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
   if (!dateRegex.test(fecha_desde) || !dateRegex.test(fecha_hasta)) {
     return res.status(400).json({
@@ -198,6 +122,8 @@ app.get('/estadisticas/detalle', async (req, res) => {
         error: 'Fechas inválidas. Usa YYYY-MM-DD'
       });
     }
+
+    console.log('📅 Consultando con fechas:', fecha_desde, fecha_hasta, nombre);
 
     // Consulta SQL (adaptada del documento Estadistica-Detalle de usuarios.txt)
     const query = `
@@ -260,9 +186,9 @@ app.get('/estadisticas/detalle', async (req, res) => {
     `;
 
     const client = await pool.connect();
-    console.log('Conexión a DB establecida para /estadisticas/detalle');
+    console.log('Conexión a DB establecida');
     try {
-      const result = await client.query(query, [fechaDesde, fechaHasta, nombre]);
+      const result = await client.query(query, [fechaDesde, fechaHasta, nombreLower]);
       
       // Calcular eficiencia y eficacia
       const processedRows = result.rows.map(row => {
@@ -291,10 +217,10 @@ app.get('/estadisticas/detalle', async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error('Error en /estadisticas/detalle:', error);
+    console.error('❌ Error en la consulta:', error);
     res.status(500).json({
-      error: `Error en la consulta: ${error.message}`,
-      stack: error.stack
+      success: false,
+      error: error.message
     });
   }
 });
@@ -310,6 +236,7 @@ app.get('/estadisticas/detalle', async (req, res) => {
 
 app.get('/estadisticas/detalle_usuario', async (req, res) => {
     const { fecha_desde, fecha_hasta, nombre, usuario } = req.query;
+    const nombreLower = nombre.toLowerCase();
   
     // Validar parámetros obligatorios
     if (!fecha_desde || !fecha_hasta || !nombre  || !usuario) {
@@ -380,9 +307,9 @@ where liq.fecha_ingreso >= $1
   and us.usuario = $4
 `; 
 const client = await pool.connect();
-console.log('Conexión a DB establecida para /estadisticas/detalle_usuario'); 
+console.log('Conexión a DB establecida'); 
 try {
-   const result = await client.query(query, [fechaDesde, fechaHasta, nombre, usuario]);
+   const result = await client.query(query, [fechaDesde, fechaHasta, nombreLower, usuario]);
     // Calcular eficiencia y eficacia
 const processedRows = result.rows.map(row => {
   const tramites = parseFloat(row.tramites) || 0;
@@ -409,7 +336,7 @@ const processedRows = result.rows.map(row => {
          client.release();
          }
         } catch (error) {
-           console.error('Error en /estadisticas/detalle_usuario:', error);
+           console.error('Error detallado:', error);
             res.status(500).json({
                error: `Error en la consulta: ${error.message}`,
                 stack: error.stack 
@@ -444,7 +371,7 @@ app.get('/estadisticas/detalle_tramite', async (req, res) => {
 
   try {
     const client = await pool.connect();
-    console.log('Conexión a DB establecida para /estadisticas/detalle_tramite');
+    console.log('Conexión a DB establecida');
 
     try {
       // Primera consulta: Eventos
@@ -502,7 +429,7 @@ app.get('/estadisticas/detalle_tramite', async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error('Error en /estadisticas/detalle_tramite:', error);
+    console.error('Error detallado:', error);
     res.status(500).json({
       error: `Error en la consulta: ${error.message}`,
       stack: error.stack
@@ -511,21 +438,32 @@ app.get('/estadisticas/detalle_tramite', async (req, res) => {
 });
 
 
-// Endpoint raíz
+// ✅ ENDPOINT RAÍZ
 app.get('/', (req, res) => {
   res.json({
-    mensaje: 'API de Estadísticas de Usuarios - CORS Configurado',
+    message: '🚀 API de Estadísticas - Ngrok',
     endpoints: {
+      test: '/test',
       usuarios: '/estadisticas/usuarios?fecha_desde=YYYY-MM-DD&fecha_hasta=YYYY-MM-DD',
       detalle: '/estadisticas/detalle?fecha_desde=YYYY-MM-DD&fecha_hasta=YYYY-MM-DD&nombre=rol',
       detalle_usuario: '/estadisticas/detalle_usuario?fecha_desde=YYYY-MM-DD&fecha_hasta=YYYY-MM-DD&nombre=rol&usuario=username',
-      detalle_tramite: '/estadisticas/detalle_tramite?num_tramite=XXXX'
-    }
+      detalle_tramite: '/estadisticas/detalle_tramite?num_tramite=XXXX',
+      raiz: '/'
+    },
+    timestamp: new Date().toISOString()
   });
 });
 
-// Iniciar servidor
-app.listen(port, () => {
-  console.log(`Servidor corriendo en http://192.188.2.240:${port}`);
-  console.log(`✅ CORS configurado para todos los dominios`);
+// ✅ INICIAR SERVIDOR
+app.listen(port, '0.0.0.0', () => {
+  console.log(`🚀 Servidor Express corriendo en puerto ${port}`);
+  console.log(`📍 URL local: http://localhost:${port}`);
+  console.log(`📍 URL red: http://0.0.0.0:${port}`);
+  console.log('📊 Endpoints disponibles:');
+  console.log('   - GET /test');
+  console.log('   - GET /estadisticas/usuarios');
+  console.log('   - GET /estadisticas/detalle');
+  console.log('   - GET /estadisticas/detalle_usuario');
+  console.log('   - GET /estadisticas/detalle_tramite');
+  console.log('   - GET /');
 });

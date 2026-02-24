@@ -1,5 +1,5 @@
-// ✅ URL correcta de ngrok
-const baseURL = 'https://undealt-hystricomorphic-velma.ngrok-free.dev';
+// Base URL: usar backend local por defecto; cambia a tu ngrok si lo necesitas
+const baseURL = 'http://localhost:5000';
 
 let fechaDesde = '';
 let fechaHasta = '';
@@ -120,6 +120,9 @@ function populateRolesTable(data) {
     document.getElementById('rolesTable').innerHTML = tableHTML;
 }
 
+
+// (login/logout controlado desde index.html)
+
 // ✅ Función loadUsers con headers
 function loadUsers(rolNombre) {
   currentRol = rolNombre;
@@ -151,8 +154,9 @@ function loadUsers(rolNombre) {
     .then(data => {
       console.log('Datos de usuarios:', data);
       if (data.success) {
+        localStorage.setItem("sesionActiva", "true");
         usersData = data.data;
-        populateUsersTable(data.data, 10);
+        populateUsersTable(data.data, 20);
       } else {
         document.getElementById('usersTable').innerHTML = 
         '<p class="error-msg">Error al cargar usuarios.</p>';
@@ -480,6 +484,9 @@ function goToTramitesPage(page) {
   renderTramitesTable();
 }
 
+// sesión manejada en index.html
+
+
 // ✅ Función loadDetalleTramite con headers
 function loadDetalleTramite(numTramite, pagina = 1) {
   document.getElementById('currentTramite').innerHTML = numTramite;
@@ -650,3 +657,5 @@ function sortByDate(column) {
 
   renderTramitesTable();
 }
+
+// cerrarSesion definido en index.html

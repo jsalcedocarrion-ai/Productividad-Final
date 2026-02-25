@@ -1,5 +1,6 @@
 // Base URL: usar backend local por defecto; cambia a tu ngrok si lo necesitas
-const baseURL = 'http://localhost:5000';
+//const baseURL = 'http://localhost:5000';
+const baseURL = 'https://undealt-hystricomorphic-velma.ngrok-free.dev';
 
 let fechaDesde = '';
 let fechaHasta = '';

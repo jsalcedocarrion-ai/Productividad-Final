@@ -444,7 +444,8 @@
 
         // Restaurar sesión si ya estaba activa
         window.addEventListener('DOMContentLoaded', function () {
-            if (localStorage.getItem("sesionActiva") === "true") {
+            //if (localStorage.getItem("sesionActiva") === "true") {
+            localStorage.clear();{
                 mostrarDashboard();
             }
         });

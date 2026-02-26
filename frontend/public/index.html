@@ -226,7 +226,7 @@
 <body>
 
     <!-- ══════════ LOGIN ══════════ -->
-    <div id="login-window" class="login-card">
+    <div id="login-window" class="login-card" style="display: block;">
         <div class="login-header">
             <h1>Sistema Productividad</h1>
             <p>Ingresa tus credenciales para acceder</p>
@@ -427,9 +427,10 @@
             }
         }
 
-        function mostrarDashboard() {
-            document.getElementById('login-window').style.display = 'none';
-            document.getElementById('main-window').style.display  = 'block';
+function mostrarDashboard() {
+    
+    document.getElementById('login-window').style.display = 'none';
+    document.getElementById('main-window').style.display  = 'block';
         }
 
         function cerrarSesion() {
@@ -439,15 +440,14 @@
             document.getElementById('mensaje').innerText = "";
             document.getElementById('main-window').style.display  = 'none';
             // login-window es una tarjeta (block), no un flex container
-            document.getElementById('login-window').style.display = 'flex';
+            document.getElementById('login-window').style.display = 'block';
+            document.getElementById('login-card').style.display = 'block';
         }
-
         // Restaurar sesión si ya estaba activa
         window.addEventListener('DOMContentLoaded', function () {
-            //if (localStorage.getItem("sesionActiva") === "true") {
-            localStorage.clear();{
-                mostrarDashboard();
-            }
+            if (localStorage.getItem("sesionActiva") === "true") {
+    mostrarDashboard();
+        }
         });
     </script>
 

@@ -210,6 +210,17 @@
         padding: 0.5rem;
     }
 }
+
+#login-window {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.d-none {
+    display: none !important;
+}
     </style>
 </head>
 <body>
@@ -428,12 +439,13 @@
             document.getElementById('mensaje').innerText = "";
             document.getElementById('main-window').style.display  = 'none';
             // login-window es una tarjeta (block), no un flex container
-            document.getElementById('login-window').style.display = 'block';
+            document.getElementById('login-window').style.display = 'flex';
         }
 
         // Restaurar sesión si ya estaba activa
         window.addEventListener('DOMContentLoaded', function () {
-            if (localStorage.getItem("sesionActiva") === "true") {
+            //if (localStorage.getItem("sesionActiva") === "true") {
+            localStorage.clear();{
                 mostrarDashboard();
             }
         });

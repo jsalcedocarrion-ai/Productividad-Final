@@ -683,7 +683,7 @@ function cerrarSesion() {
 
     // Cambiar vistas
     document.getElementById('main-window').style.display = 'none';
-    document.getElementById('login-window').style.display = 'flex';
+    document.getElementById('login-window').style.display = 'block';
 }
 
 // cerrarSesion definido en index.html

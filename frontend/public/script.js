@@ -659,4 +659,31 @@ function sortByDate(column) {
   renderTramitesTable();
 }
 
+function cerrarSesion() {
+    localStorage.removeItem("sesionActiva");
+
+    // Limpiar login
+    document.getElementById('usuario').value = "";
+    document.getElementById('password').value = "";
+    document.getElementById('mensaje').innerText = "";
+
+    // 🔥 Limpiar fechas (IMPORTANTE)
+    document.getElementById('fechaDesde').value = "";
+    document.getElementById('fechaHasta').value = "";
+
+    // Reset variables globales
+    fechaDesde = '';
+    fechaHasta = '';
+    currentRol = '';
+    currentUsuario = '';
+    usersData = [];
+
+    // Volver al paso inicial
+    showStep(1);
+
+    // Cambiar vistas
+    document.getElementById('main-window').style.display = 'none';
+    document.getElementById('login-window').style.display = 'flex';
+}
+
 // cerrarSesion definido en index.html

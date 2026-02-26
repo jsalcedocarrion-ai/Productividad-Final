@@ -37,6 +37,12 @@
             max-width: 400px;
             transition: transform 0.3s ease;
         }
+        @media (max-width: 480px) {
+    .login-card {
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+    }
+}
 
         .login-card:hover { transform: translateY(-5px); }
 
@@ -149,6 +155,61 @@
 
         .loading { padding: 2rem; text-align: center; color: #64748b; }
         .error-msg { color: #ef4444; padding: 1rem; }
+
+
+        /* 📱 MODO MÓVIL */
+@media (max-width: 768px) {
+
+    body {
+        align-items: flex-start;
+        padding: 10px;
+    }
+
+    #main-window {
+        width: 100%;
+        height: auto;
+        border-radius: 0;
+    }
+
+    .grid-container {
+        padding: 1rem;
+    }
+
+    .app-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .app-header h2 {
+        font-size: 1rem;
+    }
+
+    /* Inputs más grandes */
+    input, button {
+        font-size: 16px !important;
+    }
+
+    /* Botones full width */
+    .btn {
+        width: 100%;
+        margin-top: 5px;
+    }
+
+    /* Filas en columna */
+    .form-row {
+        flex-direction: column;
+    }
+
+    /* Tablas */
+    table {
+        font-size: 0.8rem;
+    }
+
+    th, td {
+        padding: 0.5rem;
+    }
+}
     </style>
 </head>
 <body>
@@ -189,7 +250,7 @@
             <div id="step1" class="step-container step-active">
                 <div class="date-section">
                     <h2>Seleccionar Rango de Fechas</h2>
-                    <div class="form-row row">
+                    <div class=row g-2>
                         <div class="col">
                             <label>Fecha Desde:</label>
                             <input type="date" id="fechaDesde" class="form-control">
@@ -218,7 +279,7 @@
                 <button onclick="backToStep2()" class="btn btn-secondary">← Volver a Roles</button>
                 <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#tramitesModal" onclick="showChart('tramites')">Trámites</button>
                 <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#eficaciaModal" onclick="showChart('eficacia')">Eficacia</button>
-                <div id="usersTable" class="table-responsive mt-3">
+                <div id="usersTable" class="table-responsive mt-3" style="overflow-x:auto;">
                     <div class="loading">Cargando usuarios...</div>
                 </div>
             </div>
@@ -274,7 +335,7 @@
                     <button class="btn btn-secondary" onclick="clearFilter()">Limpiar</button>
                 </div>
 
-                <div id="tramitesTable" class="table-responsive">
+                <div id="tramitesTable" class="table-responsive style="overflow-x:auto;">
                     <div class="loading">Cargando trámites...</div>
                 </div>
                 <div id="tramitesPagination" class="mt-3"></div>
@@ -298,12 +359,12 @@
 
                 <div class="tab-content" id="tramiteTabsContent">
                     <div id="eventosTab" class="tab-pane fade show active" role="tabpanel">
-                        <div id="eventosTable" class="table-responsive">
+                        <div id="eventosTable" class="table-responsive" style="overflow-x:auto;">
                             <div class="loading">Cargando eventos...</div>
                         </div>
                     </div>
                     <div id="cambiosTab" class="tab-pane fade" role="tabpanel">
-                        <div id="cambiosTable" class="table-responsive">
+                        <div id="cambiosTable" class="table-responsive" style="overflow-x:auto;">
                             <div class="loading">Cargando cambios...</div>
                         </div>
                     </div>

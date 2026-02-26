@@ -428,8 +428,9 @@
         }
 
         function mostrarDashboard() {
-            document.getElementById('login-window').style.display = 'none';
-            document.getElementById('main-window').style.display  = 'flex';
+    document.body.style.display = 'block'; // 🔥 QUITA el centrado
+    document.getElementById('login-window').style.display = 'none';
+    document.getElementById('main-window').style.display  = 'flex';
         }
 
         function cerrarSesion() {
